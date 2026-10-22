@@ -1,0 +1,380 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  MotionConfig,
+  useReducedMotion,
+} from "motion/react";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  Check,
+  MoreHorizontal,
+  CircleHelp,
+  Menu,
+  ShieldCheck,
+} from "lucide-react";
+import { initialState, localDate } from "./data";
+import type { AppState } from "./data";
+import { storage, StorageConflictError } from "./storage";
+import { Context, nav } from "./context";
+import type { Page, Setter } from "./context";
+import { IconButton, Modal } from "./components/ui";
+import { TaskForm } from "./components/Tasks";
+import { Home } from "./pages/Home";
+import { Habits } from "./pages/Habits";
+import { Planner } from "./pages/Planner";
+import { Projects } from "./pages/Projects";
+import { Food } from "./pages/Food";
+import { Insights } from "./pages/Insights";
+import { SettingsPage } from "./pages/SettingsPage";
+
+function App() {
+  const [state, setState] = useState<AppState>(initialState);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">(
+    "saved",
+  );
+  const pendingSaves = useRef(0);
+  const unsaved = useRef(false);
+  const [page, setPage] = useState<Page>(() => {
+    const p = location.hash.slice(1);
+    return nav.some((n) => n.id === p) ? (p as Page) : "home";
+  });
+  const [notice, setNotice] = useState("");
+  const [menu, setMenu] = useState(false);
+  const [help, setHelp] = useState(false);
+  const [newTask, setNewTask] = useState(false);
+  const [today, setToday] = useState(localDate());
+  const queue = useRef(Promise.resolve());
+  const stateRef = useRef(state);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    storage
+      .load()
+      .then((s) => {
+        if (s) {
+          stateRef.current = s;
+          setState(s);
+        }
+      })
+      .catch(() => {
+        setLoadFailed(true);
+        setError(
+          "Не удалось прочитать локальные данные. Проверьте доступ к хранилищу браузера. Данные оставлены без изменений.",
+        );
+      })
+      .finally(() => setLoading(false));
+    const handler = () => {
+      const p = location.hash.slice(1);
+      if (nav.some((n) => n.id === p)) setPage(p as Page);
+    };
+    window.addEventListener("hashchange", handler);
+    const timer = setInterval(() => setToday(localDate()), 30000);
+    return () => {
+      window.removeEventListener("hashchange", handler);
+      clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(""), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+  useEffect(() => {
+    const protect = (event: BeforeUnloadEvent) => {
+      if (pendingSaves.current || unsaved.current) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, []);
+  const update: Setter = (fn) => {
+    if (loadFailed) return;
+    const next = fn(stateRef.current);
+    stateRef.current = next;
+    setState(next);
+    pendingSaves.current++;
+    setSaveStatus("saving");
+    queue.current = queue.current.then(async () => {
+      try {
+        await storage.save(next);
+        unsaved.current = false;
+        setError("");
+      } catch (cause) {
+        unsaved.current = true;
+        setNotice("");
+        setError(
+          cause instanceof StorageConflictError
+            ? cause.message
+            : "Изменения не сохранены. Проверьте доступность локального хранилища. Экспортируйте данные перед закрытием.",
+        );
+      } finally {
+        pendingSaves.current--;
+        if (!pendingSaves.current)
+          setSaveStatus(unsaved.current ? "error" : "saved");
+      }
+    });
+  };
+  function go(p: Page) {
+    location.hash = p;
+    setPage(p);
+    setMenu(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+  if (loading)
+    return (
+      <div className="loading">
+        <div className="brand-mark">V</div>
+        <p>Собираем вашу вселенную…</p>
+      </div>
+    );
+  if (loadFailed)
+    return (
+      <div className="storage-recovery">
+        <ShieldCheck size={36} />
+        <h1>Сохраним твоё пространство.</h1>
+        <p role="alert">{error}</p>
+        <button className="btn primary" onClick={() => location.reload()}>
+          Повторить загрузку
+        </button>
+        <p className="field-help">
+          Не очищайте данные сайта, если у вас нет резервной копии.
+        </p>
+      </div>
+    );
+  return (
+    <Context.Provider value={{ state, update, toast: setNotice, go, today }}>
+      <MotionConfig
+        reducedMotion={state.settings.motion === "full" ? "user" : "always"}
+      >
+        <div
+          className={`app theme-${state.settings.theme} accent-${state.settings.accent} motion-${state.settings.motion}`}
+        >
+          <aside className={`sidebar ${menu ? "is-open" : ""}`}>
+            <a
+              href="#home"
+              className="brand"
+              onClick={() => go("home")}
+              aria-label="VSPACE — главная"
+            >
+              <span className="brand-mark">V</span>VSPACE
+              <span className="brand-dot">®</span>
+            </a>
+            <div className="workspace-label">
+              <span className="status-dot" /> PERSONAL UNIVERSE <span>01</span>
+            </div>
+            <nav aria-label="Основная навигация">
+              {nav.map((n, i) => (
+                <button
+                  key={n.id}
+                  className={`nav-item ${page === n.id ? "active" : ""} ${i === 6 ? "nav-settings" : ""}`}
+                  aria-current={page === n.id ? "page" : undefined}
+                  onClick={() => go(n.id)}
+                >
+                  <n.icon size={19} />
+                  <span>{n.label}</span>
+                  {page === n.id ? (
+                    <motion.span
+                      layoutId="active-nav-dot"
+                      className="nav-active-dot"
+                      transition={{
+                        type: "spring",
+                        stiffness: 350,
+                        damping: 28,
+                      }}
+                    />
+                  ) : (
+                    <span className="nav-index">0{i + 1}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+            <div className="sidebar-bottom">
+              <div className="small-orbit">✳</div>
+              <h3>
+                Место для
+                <br />
+                большего.
+              </h3>
+              <p>
+                Маленькие шаги.
+                <br />
+                Твоя большая вселенная.
+              </p>
+              <button className="text-link" onClick={() => setHelp(true)}>
+                О пространстве <ArrowUpRight size={16} />
+              </button>
+            </div>
+            <button className="profile" onClick={() => go("settings")}>
+              <div className="avatar">
+                {state.profile.name.slice(0, 1).toUpperCase() || "V"}
+              </div>
+              <div>
+                <strong>{state.profile.name || "Ваше пространство"}</strong>
+                <small>Локальный профиль</small>
+              </div>
+              <MoreHorizontal size={18} />
+            </button>
+          </aside>
+          {menu && (
+            <button
+              className="sidebar-scrim"
+              aria-label="Закрыть меню"
+              onClick={() => setMenu(false)}
+            />
+          )}
+          <div className="main-shell">
+            <header className="topbar">
+              <div className="breadcrumb">
+                <button
+                  className="mobile-menu icon-btn"
+                  onClick={() => setMenu(true)}
+                  aria-label="Открыть меню"
+                >
+                  <Menu size={20} />
+                </button>
+                <span>Моя вселенная</span>
+                <span className="slash">/</span>
+                <strong>{nav.find((n) => n.id === page)?.label}</strong>
+              </div>
+              <div className="top-actions">
+                <span
+                  className={`local-badge save-${saveStatus}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="status-dot" />{" "}
+                  {saveStatus === "saving"
+                    ? "Сохраняем…"
+                    : saveStatus === "error"
+                      ? "Не сохранено"
+                      : "Сохранено локально"}
+                </span>
+                <IconButton
+                  label="Как работает VSPACE"
+                  onClick={() => setHelp(true)}
+                >
+                  <CircleHelp size={19} />
+                </IconButton>
+                <button
+                  className="avatar small"
+                  onClick={() => go("settings")}
+                  aria-label="Настройки профиля"
+                >
+                  {state.profile.name.slice(0, 1).toUpperCase() || "V"}
+                </button>
+              </div>
+            </header>
+            {error && (
+              <div className="error-banner" role="alert">
+                {error}
+                <div className="button-row wrap">
+                  <button onClick={() => go("settings")}>Экспорт данных</button>
+                  <button onClick={() => location.reload()}>
+                    Перезагрузить
+                  </button>
+                </div>
+              </div>
+            )}
+            <main id="main-content">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={page}
+                  initial={{ opacity: 0, y: reduce ? 0 : 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{
+                    duration: state.settings.motion === "off" ? 0 : 0.2,
+                  }}
+                >
+                  {page === "home" ? (
+                    <Home newTask={() => setNewTask(true)} />
+                  ) : page === "habits" ? (
+                    <Habits />
+                  ) : page === "planner" ? (
+                    <Planner />
+                  ) : page === "projects" ? (
+                    <Projects />
+                  ) : page === "food" ? (
+                    <Food />
+                  ) : page === "insights" ? (
+                    <Insights />
+                  ) : (
+                    <SettingsPage />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+            <footer className="footer">
+              <span>VSPACE © {new Date().getFullYear()}</span>
+              <span>
+                MAKE ROOM FOR YOURSELF <span className="accent-text">↗</span>
+              </span>
+              <span>Твой ритм. Твоя орбита.</span>
+            </footer>
+          </div>
+          <nav className="bottom-nav" aria-label="Мобильная навигация">
+            {nav.slice(0, 4).map((n) => (
+              <button
+                key={n.id}
+                aria-current={page === n.id ? "page" : undefined}
+                className={page === n.id ? "active" : ""}
+                onClick={() => go(n.id)}
+              >
+                <n.icon size={20} />
+                <span>{n.label}</span>
+              </button>
+            ))}
+            <button onClick={() => setMenu(true)}>
+              <Menu size={20} />
+              <span>Ещё</span>
+            </button>
+          </nav>
+          {notice && (
+            <div role="status" className="toast">
+              <Check size={18} />
+              {notice}
+            </div>
+          )}
+          {newTask && <TaskForm onClose={() => setNewTask(false)} />}{" "}
+          {help && (
+            <Modal title="Ваша личная вселенная" onClose={() => setHelp(false)}>
+              <div className="help-content">
+                <p>
+                  VSPACE объединяет планы, привычки, проекты и питание. Начните
+                  с одной задачи или привычки — статистика появится по мере
+                  использования.
+                </p>
+                <div className="notice">
+                  <ShieldCheck />
+                  Данные хранятся только в IndexedDB этого браузера. Аккаунта и
+                  облачной синхронизации пока нет.
+                </div>
+                <p>
+                  Создавайте резервную копию в настройках. Очистка данных
+                  браузера удалит ваше пространство. После первого
+                  онлайн-запуска production-версии PWA доступна без сети.
+                </p>
+                <button
+                  className="btn primary"
+                  onClick={() => {
+                    setHelp(false);
+                    go("settings");
+                  }}
+                >
+                  Открыть настройки <ArrowRight size={16} />
+                </button>
+              </div>
+            </Modal>
+          )}
+        </div>
+      </MotionConfig>
+    </Context.Provider>
+  );
+}
+export default App;
