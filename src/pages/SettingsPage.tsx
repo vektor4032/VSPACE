@@ -1,4 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AccountPanel } from "../cloud/AccountPanel";
+import { useAuth } from "../cloud/Auth";
 import { motion } from "motion/react";
 import {
   ArrowUpRight,
@@ -15,7 +17,13 @@ import { useApp } from "../context";
 import { Modal, PageHeading, SectionHead } from "../components/ui";
 
 export function SettingsPage() {
+  const { session } = useAuth();
   const { state, update, toast, go } = useApp();
+  const [profileDraft, setProfileDraft] = useState(state.profile);
+  const [profileDirty, setProfileDirty] = useState(false);
+  useEffect(() => {
+    if (!profileDirty) setProfileDraft(state.profile);
+  }, [state.profile, profileDirty]);
   const [confirm, setConfirm] = useState<"reset" | "import" | null>(null);
   const [incoming, setIncoming] = useState<AppState | null>(null);
   const [error, setError] = useState("");
@@ -50,6 +58,7 @@ export function SettingsPage() {
         title="Настроить под себя."
         description="Пусть это пространство будет действительно твоим."
       />
+      <AccountPanel />
       <div className="settings-layout">
         <section className="panel">
           <SectionHead index="01" title="Личный профиль" />
@@ -57,14 +66,14 @@ export function SettingsPage() {
             className="form"
             onSubmit={(e) => {
               e.preventDefault();
-              const f = new FormData(e.currentTarget);
               update((s) => ({
                 ...s,
                 profile: {
-                  name: String(f.get("name")).trim(),
-                  focus: String(f.get("focus")).trim(),
+                  name: profileDraft.name.trim(),
+                  focus: profileDraft.focus.trim(),
                 },
               }));
+              setProfileDirty(false);
               toast("Профиль сохранён");
             }}
           >
@@ -73,7 +82,11 @@ export function SettingsPage() {
               <input
                 name="name"
                 maxLength={50}
-                defaultValue={state.profile.name}
+                value={profileDraft.name}
+                onChange={(e) => {
+                  setProfileDirty(true);
+                  setProfileDraft({ ...profileDraft, name: e.target.value });
+                }}
                 placeholder="Ваше имя"
               />
             </label>
@@ -82,7 +95,11 @@ export function SettingsPage() {
               <input
                 name="focus"
                 maxLength={150}
-                defaultValue={state.profile.focus}
+                value={profileDraft.focus}
+                onChange={(e) => {
+                  setProfileDirty(true);
+                  setProfileDraft({ ...profileDraft, focus: e.target.value });
+                }}
                 placeholder="То, что важно прямо сейчас"
               />
             </label>
@@ -181,8 +198,9 @@ export function SettingsPage() {
           <div className="notice">
             <ShieldCheck size={23} />
             <p>
-              Ваши данные остаются в этом браузере. VSPACE не отправляет их на
-              сервер. Синхронизация между устройствами пока не подключена.
+              {session
+                ? "Записи сохраняются на устройстве и синхронизируются с вашим аккаунтом Supabase. Другие пользователи не имеют к ним доступа."
+                : "Без входа записи остаются в этом браузере. Войдите в аккаунт выше, чтобы синхронизировать устройства."}
             </p>
           </div>
           <div className="button-row wrap">

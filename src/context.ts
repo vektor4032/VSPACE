@@ -15,6 +15,7 @@ import {
   Leaf,
   Sparkles,
 } from "lucide-react";
+import type { useWorkspace } from "./cloud/useWorkspace";
 import type { AppState } from "./data";
 
 export type Page =
@@ -26,6 +27,7 @@ export const Context = createContext<{
   toast: (s: string) => void;
   go: (p: Page) => void;
   today: string;
+  cloud: ReturnType<typeof useWorkspace>;
 }>(null!);
 export const useApp = () => useContext(Context);
 export const nav = [

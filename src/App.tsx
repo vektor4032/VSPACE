@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AnimatePresence,
   motion,
@@ -14,11 +14,13 @@ import {
   Menu,
   ShieldCheck,
 } from "lucide-react";
-import { initialState, localDate } from "./data";
-import type { AppState } from "./data";
-import { storage, StorageConflictError } from "./storage";
+import { localDate } from "./data";
+
+import { useAuth } from "./cloud/Auth";
+import { useWorkspace } from "./cloud/useWorkspace";
 import { Context, nav } from "./context";
-import type { Page, Setter } from "./context";
+import type { Page } from "./context";
+import { UpdateNotice } from "./components/UpdateNotice";
 import { IconButton, Modal } from "./components/ui";
 import { TaskForm } from "./components/Tasks";
 import { Home } from "./pages/Home";
@@ -30,15 +32,18 @@ import { Insights } from "./pages/Insights";
 import { SettingsPage } from "./pages/SettingsPage";
 
 function App() {
-  const [state, setState] = useState<AppState>(initialState);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">(
-    "saved",
-  );
-  const pendingSaves = useRef(0);
-  const unsaved = useRef(false);
+  const workspace = useWorkspace();
+  const { session } = useAuth();
+  const state = workspace.data;
+  const update = workspace.update;
+  const loading = !workspace.ready;
+  const loadFailed = !!workspace.fatal;
+  const error = workspace.fatal || workspace.localError;
+  const saveStatus = workspace.localSaving
+    ? "saving"
+    : workspace.localError
+      ? "error"
+      : "saved";
   const [page, setPage] = useState<Page>(() => {
     const p = location.hash.slice(1);
     return nav.some((n) => n.id === p) ? (p as Page) : "home";
@@ -48,25 +53,8 @@ function App() {
   const [help, setHelp] = useState(false);
   const [newTask, setNewTask] = useState(false);
   const [today, setToday] = useState(localDate());
-  const queue = useRef(Promise.resolve());
-  const stateRef = useRef(state);
   const reduce = useReducedMotion();
   useEffect(() => {
-    storage
-      .load()
-      .then((s) => {
-        if (s) {
-          stateRef.current = s;
-          setState(s);
-        }
-      })
-      .catch(() => {
-        setLoadFailed(true);
-        setError(
-          "Не удалось прочитать локальные данные. Проверьте доступ к хранилищу браузера. Данные оставлены без изменений.",
-        );
-      })
-      .finally(() => setLoading(false));
     const handler = () => {
       const p = location.hash.slice(1);
       if (nav.some((n) => n.id === p)) setPage(p as Page);
@@ -83,43 +71,6 @@ function App() {
     const t = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(t);
   }, [notice]);
-  useEffect(() => {
-    const protect = (event: BeforeUnloadEvent) => {
-      if (pendingSaves.current || unsaved.current) {
-        event.preventDefault();
-        event.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", protect);
-    return () => window.removeEventListener("beforeunload", protect);
-  }, []);
-  const update: Setter = (fn) => {
-    if (loadFailed) return;
-    const next = fn(stateRef.current);
-    stateRef.current = next;
-    setState(next);
-    pendingSaves.current++;
-    setSaveStatus("saving");
-    queue.current = queue.current.then(async () => {
-      try {
-        await storage.save(next);
-        unsaved.current = false;
-        setError("");
-      } catch (cause) {
-        unsaved.current = true;
-        setNotice("");
-        setError(
-          cause instanceof StorageConflictError
-            ? cause.message
-            : "Изменения не сохранены. Проверьте доступность локального хранилища. Экспортируйте данные перед закрытием.",
-        );
-      } finally {
-        pendingSaves.current--;
-        if (!pendingSaves.current)
-          setSaveStatus(unsaved.current ? "error" : "saved");
-      }
-    });
-  };
   function go(p: Page) {
     location.hash = p;
     setPage(p);
@@ -148,7 +99,9 @@ function App() {
       </div>
     );
   return (
-    <Context.Provider value={{ state, update, toast: setNotice, go, today }}>
+    <Context.Provider
+      value={{ state, update, toast: setNotice, go, today, cloud: workspace }}
+    >
       <MotionConfig
         reducedMotion={state.settings.motion === "full" ? "user" : "always"}
       >
@@ -216,7 +169,9 @@ function App() {
               </div>
               <div>
                 <strong>{state.profile.name || "Ваше пространство"}</strong>
-                <small>Локальный профиль</small>
+                <small>
+                  {session ? "Облачный аккаунт" : "Локальный профиль"}
+                </small>
               </div>
               <MoreHorizontal size={18} />
             </button>
@@ -253,7 +208,11 @@ function App() {
                     ? "Сохраняем…"
                     : saveStatus === "error"
                       ? "Не сохранено"
-                      : "Сохранено локально"}
+                      : session
+                        ? workspace.status === "synced" && !workspace.dirty
+                          ? "Синхронизировано"
+                          : "Сохранено на устройстве"
+                        : "Сохранено локально"}
                 </span>
                 <IconButton
                   label="Как работает VSPACE"
@@ -341,6 +300,9 @@ function App() {
               {notice}
             </div>
           )}
+          <UpdateNotice
+            blocked={workspace.localSaving || !!workspace.localError}
+          />
           {newTask && <TaskForm onClose={() => setNewTask(false)} />}{" "}
           {help && (
             <Modal title="Ваша личная вселенная" onClose={() => setHelp(false)}>
@@ -352,8 +314,8 @@ function App() {
                 </p>
                 <div className="notice">
                   <ShieldCheck />
-                  Данные хранятся только в IndexedDB этого браузера. Аккаунта и
-                  облачной синхронизации пока нет.
+                  Записи сохраняются на устройстве. Для синхронизации между
+                  телефоном и компьютером войдите в один аккаунт в настройках.
                 </div>
                 <p>
                   Создавайте резервную копию в настройках. Очистка данных
@@ -377,4 +339,15 @@ function App() {
     </Context.Provider>
   );
 }
-export default App;
+function WorkspaceRoot() {
+  const { ready, session } = useAuth();
+  if (!ready)
+    return (
+      <div className="loading">
+        <div className="brand-mark">V</div>
+        <p>Открываем пространство…</p>
+      </div>
+    );
+  return <App key={session?.user.id || "guest"} />;
+}
+export default WorkspaceRoot;
