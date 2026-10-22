@@ -9,7 +9,12 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["icon.svg", "icon-192.png", "icon-512.png"],
+      includeAssets: [
+        "icon.svg",
+        "icon-192.png",
+        "icon-512.png",
+        "sw-legacy-upgrade.js",
+      ],
       manifest: {
         name: "VSPACE — Personal Digital Universe",
         short_name: "VSPACE",
@@ -41,6 +46,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        importScripts: ["sw-legacy-upgrade.js"],
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         maximumFileSizeToCacheInBytes: 4000000,
       },
