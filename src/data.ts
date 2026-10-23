@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lifeSchema, emptyLife } from "./life/schema";
 export const localDate = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const shiftDate = (date: string, n: number) => {
@@ -63,6 +64,7 @@ export const projectSchema = z.object({
   color: z.enum(["lime", "violet", "mint"]),
 });
 export const stateSchema = z.object({
+  life: lifeSchema.default(() => structuredClone(emptyLife)),
   version: z.literal(1),
   profile: z.object({ name: z.string().max(50), focus: z.string().max(150) }),
   settings: z.object({
@@ -99,6 +101,7 @@ export type Task = z.infer<typeof taskSchema>;
 export type Habit = z.infer<typeof habitSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export const initialState: AppState = {
+  life: structuredClone(emptyLife),
   version: 1,
   profile: { name: "", focus: "" },
   settings: { accent: "lime", theme: "dark", motion: "full", three: true },
@@ -121,7 +124,17 @@ export function parseImport(raw: string): AppState {
   if (!result.success)
     throw Error("Формат данных не соответствует резервной копии VSPACE v1");
   const s = result.data;
-  for (const list of [s.tasks, s.habits, s.projects, s.meals]) {
+  for (const list of [
+    s.tasks,
+    s.habits,
+    s.projects,
+    s.meals,
+    s.life.goals,
+    s.life.thoughts,
+    s.life.transactions,
+    s.life.foodLog,
+    s.life.inspiration.customQuotes,
+  ]) {
     if (new Set(list.map((x) => x.id)).size !== list.length)
       throw Error("Обнаружены повторяющиеся идентификаторы");
   }

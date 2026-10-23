@@ -398,6 +398,18 @@ export function Habits() {
               const f = new FormData(e.currentTarget);
               update((s) => ({
                 ...s,
+                life: s.life.journal[date]
+                  ? {
+                      ...s.life,
+                      journal: {
+                        ...s.life.journal,
+                        [date]: {
+                          ...s.life.journal[date],
+                          mood: Number(f.get("mood")),
+                        },
+                      },
+                    }
+                  : s.life,
                 checkins: {
                   ...s.checkins,
                   [date]: {
@@ -444,7 +456,9 @@ export function Habits() {
                 name="mood"
                 min="1"
                 max="5"
-                defaultValue={checkin?.mood ?? 3}
+                defaultValue={
+                  state.life.journal[date]?.mood ?? checkin?.mood ?? 3
+                }
               />
               <span className="range-labels">
                 <span>Тяжёлый день</span>

@@ -15,7 +15,10 @@ export function WellbeingChart({ days }: { days: string[] }) {
   const points = days.map((date, index) => ({
     date,
     index,
-    value: state.checkins[date]?.[metric],
+    value:
+      metric === "mood"
+        ? (state.life.journal[date]?.mood ?? state.checkins[date]?.mood)
+        : state.checkins[date]?.[metric],
   }));
   const recorded = points.filter((p) => p.value !== undefined);
   const info = metrics.find((m) => m.id === metric)!;

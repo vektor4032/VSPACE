@@ -314,6 +314,16 @@ export function Home({ newTask }: { newTask: () => void }) {
           </div>
         </section>
       </div>
+      <section className="life-home-link">
+        <div>
+          <span className="eyebrow">SMALL STEPS / WHOLE LIFE</span>
+          <h2>Моя жизнь — в моём ритме.</h2>
+          <p>Неделя, цели на 21 / 90 дней, дневник, питание и финансы.</p>
+        </div>
+        <button className="btn primary" onClick={() => go("life")}>
+          Открыть мою жизнь <ArrowUpRight size={17} />
+        </button>
+      </section>
       <section className="projects-home">
         <SectionHead
           index="03"

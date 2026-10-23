@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import {
   LayoutDashboard,
+  HeartHandshake,
   Orbit,
   CalendarDays,
   Folder,
@@ -19,7 +20,14 @@ import type { useWorkspace } from "./cloud/useWorkspace";
 import type { AppState } from "./data";
 
 export type Page =
-  "home" | "habits" | "planner" | "projects" | "food" | "insights" | "settings";
+  | "home"
+  | "life"
+  | "habits"
+  | "planner"
+  | "projects"
+  | "food"
+  | "insights"
+  | "settings";
 export type Setter = (fn: (s: AppState) => AppState) => void;
 export const Context = createContext<{
   state: AppState;
@@ -32,6 +40,7 @@ export const Context = createContext<{
 export const useApp = () => useContext(Context);
 export const nav = [
   { id: "home", label: "Главная", en: "Overview", icon: LayoutDashboard },
+  { id: "life", label: "Моя жизнь", en: "Life", icon: HeartHandshake },
   { id: "habits", label: "Привычки", en: "Habits", icon: Orbit },
   { id: "planner", label: "Планер", en: "Planner", icon: CalendarDays },
   { id: "projects", label: "Проекты", en: "Projects", icon: Folder },

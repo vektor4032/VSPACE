@@ -313,3 +313,68 @@ test("same-record conflicts offer a version choice instead of overwriting", asyn
   await ca.close();
   await cb.close();
 });
+
+test("life nutrition, journals and finance synchronize across computer and phone including offline entries", async ({
+  browser,
+}) => {
+  const server = new MockCloud();
+  const desktop = await browser.newContext();
+  const mobile = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+  });
+  const phoneNetwork = { online: true };
+  await server.install(desktop);
+  await server.install(mobile, phoneNetwork);
+  const a = await desktop.newPage(),
+    b = await mobile.newPage();
+  await login(a);
+  await login(b);
+  await a.goto("/#life?tab=finance");
+  await a.getByRole("button", { name: "Новая операция", exact: true }).click();
+  await a.getByLabel("Сумма, ₽").fill("123,45");
+  await a
+    .getByRole("button", { name: "Сохранить операцию", exact: true })
+    .click();
+  await synced(a);
+  await b.goto("/#settings");
+  await b
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(b);
+  await b.goto("/#life?tab=finance");
+  await expect(b.locator(".finance-row")).toContainText("123,45");
+  phoneNetwork.online = false;
+  await b.goto("/#life?tab=nutrition");
+  await b.getByRole("button", { name: "+ 250 мл", exact: true }).click();
+  await expect(b.locator(".local-badge")).toHaveText("Сохранено на устройстве");
+  await a.goto("/#life?tab=psychology");
+  await a.getByRole("button", { name: "Записать день", exact: true }).click();
+  await a.getByLabel("Один бережный шаг для себя").fill("Прогуляться у воды");
+  await a
+    .getByRole("button", { name: "Сохранить дневник", exact: true })
+    .click();
+  await synced(a);
+  phoneNetwork.online = true;
+  await b.goto("/#settings");
+  await b
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(b);
+  await b.goto("/#life?tab=psychology");
+  await expect(b.locator(".journal-entry")).toContainText("Прогуляться у воды");
+  await a.goto("/#settings");
+  await a
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(a);
+  await a.goto("/#life?tab=nutrition");
+  await expect(a.locator(".water-count")).toContainText("0,25");
+  const cloud = server.rows.get(ids["one@example.test"])!.data;
+  expect(cloud.life.transactions[0].amountMinor).toBe(12345);
+  expect(Object.values(cloud.life.water)).toEqual([250]);
+  expect(Object.values(cloud.life.journal)[0].tinyStep).toBe(
+    "Прогуляться у воды",
+  );
+  await desktop.close();
+  await mobile.close();
+});

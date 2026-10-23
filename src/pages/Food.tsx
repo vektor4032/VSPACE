@@ -317,6 +317,36 @@ function RecipeModal({
           </button>
           <button
             className="btn"
+            disabled={!date || date > today}
+            onClick={() => {
+              update((s) => ({
+                ...s,
+                life: {
+                  ...s.life,
+                  foodLog: [
+                    ...s.life.foodLog,
+                    {
+                      id: uid(),
+                      date,
+                      slot,
+                      title: r.title,
+                      grams: null,
+                      calories: r.calories,
+                      protein: null,
+                      fat: null,
+                      carbs: null,
+                      estimated: true,
+                    },
+                  ],
+                },
+              }));
+              toast("В дневник питания добавлена 1 порция");
+            }}
+          >
+            <Plus size={16} /> В дневник: 1 порция
+          </button>
+          <button
+            className="btn"
             aria-pressed={state.favorites.includes(r.id)}
             onClick={() =>
               update((s) => ({

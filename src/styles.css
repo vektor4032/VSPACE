@@ -4184,3 +4184,984 @@ textarea {
     display: block;
   }
 }
+
+/* Life workspace: the same dark palette, with compact, responsive trackers. */
+.life-tabs {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 0 0 15px;
+  margin: 0 0 28px;
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: thin;
+}
+.life-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.life-tabs button.active {
+  background: var(--accent);
+  color: #10150a;
+  border-color: var(--accent);
+}
+.life-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.life-content h2 {
+  font-size: clamp(21px, 2.3vw, 31px);
+  letter-spacing: -0.8px;
+}
+.life-content h3 {
+  font-size: 17px;
+  line-height: 1.5;
+}
+.life-content .panel {
+  min-width: 0;
+}
+.life-content .panel > .section-head {
+  margin-bottom: 24px;
+}
+.life-content .toolbar {
+  margin: 0;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.life-grid,
+.life-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.life-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.life-card,
+.goal-card,
+.quote-card {
+  padding: 25px;
+}
+.life-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.life-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.life-section-intro,
+.life-overview-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 0;
+}
+.life-section-intro p,
+.life-overview-intro p {
+  color: var(--muted);
+  margin-top: 10px;
+  max-width: 620px;
+}
+.life-overview-intro {
+  padding: 24px 0;
+}
+.life-overview-intro h2 {
+  margin-top: 14px;
+}
+.life-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.life-row > input {
+  min-width: 0;
+  flex: 1;
+}
+.life-row > h3 {
+  min-width: 0;
+}
+.life-row > label {
+  flex: 1;
+  min-width: 0;
+}
+.life-note,
+.pre-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.life-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+.life-content .field-help {
+  margin: 0;
+}
+.life-content .muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+.life-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.life-metrics.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.life-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 22px;
+}
+.life-metric > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.life-metric > strong {
+  font-size: clamp(23px, 2.2vw, 34px);
+  font-weight: 500;
+  letter-spacing: -1px;
+  overflow-wrap: anywhere;
+}
+.life-metric > small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.life-inline-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  padding: 15px 0;
+}
+.life-inline-metrics > div {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.life-inline-metrics small {
+  color: var(--muted);
+}
+.life-inline-metrics strong {
+  font-size: 23px;
+  font-weight: 500;
+}
+.life-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.life-date input {
+  width: 150px;
+}
+.life-trend {
+  min-width: 0;
+}
+.life-trend-bars {
+  display: flex;
+  gap: 4px;
+  height: 170px;
+  padding: 12px 0 25px;
+  border-bottom: 1px solid var(--line);
+}
+.life-trend-bars > div {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+  background: linear-gradient(
+    0deg,
+    transparent 24%,
+    var(--line) 25%,
+    transparent 26%,
+    transparent 49%,
+    var(--line) 50%,
+    transparent 51%,
+    transparent 74%,
+    var(--line) 75%,
+    transparent 76%
+  );
+}
+.life-trend-bars > div > span {
+  width: 100%;
+  max-width: 40px;
+  margin: 0 auto;
+  background: var(--accent);
+  opacity: 0.8;
+  border-radius: 4px 4px 0 0;
+}
+.life-trend-bars small {
+  position: absolute;
+  bottom: -21px;
+  width: 100%;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+.life-trend .chart-data {
+  margin-top: 15px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.life-trend .chart-data p {
+  margin-top: 6px;
+}
+.life-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 18px 0;
+}
+.life-checklist label,
+.life-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.life-content input[type="checkbox"],
+.life-fieldset input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  accent-color: var(--accent);
+  margin: 0;
+}
+.is-done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.life-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--line);
+  padding: 15px;
+  border-radius: 7px;
+  min-width: 0;
+}
+.life-fieldset legend {
+  padding: 0 6px;
+}
+.life-fieldset .life-row input {
+  width: 100%;
+}
+.life-priorities {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.life-goal-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  text-align: left;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.life-goal-link > span:first-child {
+  flex: 1;
+}
+.life-goal-link small {
+  display: block;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.life-progress-track,
+.progress-track {
+  display: block;
+  height: 5px;
+  background: var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.life-progress-track {
+  flex-basis: 100%;
+}
+.life-progress-track i,
+.progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+}
+.life-poster-placeholder {
+  align-items: flex-start;
+  justify-content: center;
+  background: radial-gradient(ellipse at 90% 10%, #b7ff360e, transparent);
+}
+.life-poster-placeholder > span {
+  font-size: 70px;
+  color: var(--accent);
+}
+.overview-poster {
+  background: var(--surface);
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 380px;
+  border: 1px solid var(--line);
+}
+.overview-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.goal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.goal-card .life-checklist {
+  margin: 0;
+}
+.goal-card h3 {
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+.goal-progress {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+}
+.goal-habits {
+  border-top: 1px solid var(--line);
+  padding-top: 15px;
+}
+.goal-habits h4 {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.goal-habits p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  margin: 5px 0;
+}
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 9px;
+}
+.week-day {
+  padding: 14px 12px;
+  min-height: 170px;
+}
+.week-day h3 {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.week-day.is-today {
+  border-color: var(--accent);
+}
+.week-day .life-row {
+  gap: 2px;
+}
+.week-day .life-row .icon-btn {
+  width: 26px;
+  height: 30px;
+}
+.week-day .task-row {
+  padding: 12px 0;
+  gap: 6px;
+  align-items: flex-start;
+}
+.week-day .task-title {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.week-day .task-title small,
+.week-day .priority-dot {
+  display: none;
+}
+.week-day .checkbox {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 2px;
+}
+.week-day > .field-help {
+  padding-top: 20px;
+  font-size: 11px;
+}
+.life-week-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.life-week-picker input {
+  width: 150px;
+}
+.life-list-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.weekly-habits {
+  display: grid;
+  gap: 12px;
+}
+.weekly-habit {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) repeat(7, minmax(30px, 55px));
+  gap: 8px;
+  align-items: center;
+}
+.weekly-habit > span {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.weekly-habit > span small {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.weekly-habit button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0;
+}
+.weekly-habit button small {
+  color: var(--muted);
+}
+.weekly-habit button > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 11px;
+}
+.weekly-habit button.checked > span {
+  background: var(--accent);
+  color: #10150a;
+  border-color: var(--accent);
+}
+.reflection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 25px;
+  margin: 25px 0;
+}
+.reflection-grid p {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.mood-picker {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 6px;
+}
+.mood-picker legend {
+  margin-bottom: 12px;
+}
+.mood-picker button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 13px 3px;
+}
+.mood-picker button span {
+  font-size: 25px;
+}
+.mood-picker button.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--accent);
+}
+.mood-picker button small {
+  font-size: 10px;
+}
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+}
+.brain-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.brain-intro p {
+  max-width: 800px;
+  color: var(--muted);
+}
+.thought-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.thought-column {
+  padding: 18px 14px;
+}
+.thought-column > h3 {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+.thought-column > h3 small {
+  color: var(--accent);
+}
+.thought-card {
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.thought-card p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.thought-card small {
+  color: var(--muted);
+}
+.thought-card select {
+  width: 100%;
+  font-size: 11px;
+  padding: 8px;
+}
+.thought-card .button-row {
+  justify-content: space-between;
+}
+.thought-card .text-link {
+  font-size: 11px;
+}
+.balance-wheel svg {
+  display: block;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  overflow: visible;
+}
+.balance-wheel svg text {
+  font-size: 9px;
+}
+.balance-form {
+  display: grid;
+  gap: 20px;
+}
+.balance-form fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0 0 15px;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.balance-form legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.balance-form legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.balance-form legend strong {
+  margin-left: auto;
+  font-size: 11px;
+}
+.balance-form input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.balance-form label:not(.sr-only) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.balance-form select {
+  width: 100px;
+  padding: 7px;
+}
+.balance-history > div {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.balance-history > div > button:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  flex: 1;
+  gap: 10px;
+}
+.balance-history small {
+  color: var(--muted);
+}
+.category-breakdown {
+  display: grid;
+  gap: 23px;
+}
+.category-breakdown > div > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+.category-breakdown span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.category-breakdown i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.category-breakdown strong small {
+  color: var(--muted);
+  margin-left: 8px;
+}
+.budget-progress {
+  margin-top: 22px;
+  display: grid;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.finance-records {
+  display: grid;
+  gap: 2px;
+}
+.finance-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.finance-icon {
+  width: 35px;
+  height: 35px;
+  background: var(--line);
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+.finance-icon.income,
+.mint-text {
+  color: #39e6a2;
+}
+.finance-description {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.finance-description strong {
+  font-size: 13px;
+}
+.finance-description small {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+.finance-row > strong {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.water-count {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 0;
+}
+.water-count > svg {
+  width: 35px;
+  height: 35px;
+  color: #c2f4ff;
+}
+.water-count strong {
+  font-size: 48px;
+  letter-spacing: -2px;
+  font-weight: 400;
+}
+.water-count strong small {
+  font-size: 20px;
+  margin-left: 7px;
+}
+.water-count > span {
+  color: var(--muted);
+}
+.hydration-panel > .button-row {
+  margin: 23px 0;
+}
+.food-log-group {
+  border-top: 1px solid var(--line);
+  padding: 20px 0;
+}
+.food-log-group > h3 {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.food-log-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+}
+.food-log-row > button:first-child {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.food-log-row strong {
+  display: block;
+  font-size: 14px;
+}
+.food-log-row small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+}
+.daily-quote {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 22px;
+  background:
+    radial-gradient(ellipse at 95% 5%, #b7ff3610, transparent 70%),
+    var(--surface);
+}
+.daily-quote blockquote {
+  font-size: clamp(23px, 2.3vw, 34px);
+  line-height: 1.5;
+  letter-spacing: -0.7px;
+  margin: 0;
+  max-width: 800px;
+}
+.quote-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+}
+.quote-card > p {
+  font-size: 16px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.poster-card {
+  padding: 0;
+  overflow: hidden;
+}
+.poster-card > img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.poster-actions {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.poster-actions .button-row {
+  justify-content: space-between;
+}
+.life-home-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 27px;
+  margin: 28px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: linear-gradient(110deg, #b7ff360d, transparent), var(--surface);
+}
+.life-home-link h2 {
+  font-size: 23px;
+  margin: 8px 0;
+}
+.life-home-link p {
+  color: var(--muted);
+}
+@media (min-width: 1400px) {
+  .life-two {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+@media (max-width: 1250px) {
+  .week-days {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .thought-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .life-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .life-grid.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .life-grid,
+  .life-two,
+  .life-grid.three {
+    grid-template-columns: 1fr;
+  }
+  .life-metrics.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .life-metrics.three > :last-child {
+    grid-column: 1/-1;
+  }
+  .life-section-intro,
+  .life-overview-intro,
+  .life-home-link {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .life-tabs {
+    margin-bottom: 20px;
+  }
+  .life-tabs button {
+    padding: 11px 12px;
+    font-size: 12px;
+  }
+  .life-card,
+  .goal-card,
+  .quote-card,
+  .daily-quote {
+    padding: 20px;
+  }
+  .life-metric {
+    padding: 18px;
+  }
+  .week-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .week-day:last-child {
+    grid-column: 1/-1;
+  }
+  .thought-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .thought-column:first-child {
+    grid-column: 1/-1;
+  }
+  .reflection-grid {
+    grid-template-columns: 1fr;
+  }
+  .finance-row {
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .finance-row .finance-icon {
+    display: none;
+  }
+  .finance-row > strong {
+    font-size: 12px;
+  }
+  .finance-row .icon-btn {
+    width: 29px;
+  }
+  .finance-description {
+    flex-basis: 45%;
+  }
+  .weekly-habit {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .weekly-habit > span {
+    grid-column: 1/-1;
+    margin-bottom: 10px;
+  }
+  .life-content .toolbar > .button-row {
+    flex-wrap: wrap;
+  }
+  .life-week-picker {
+    gap: 6px;
+  }
+  .mood-picker button small {
+    font-size: 9px;
+  }
+  .life-content .life-row > .text-link {
+    font-size: 11px;
+  }
+  .life-content .tag {
+    white-space: normal;
+  }
+}
+@media (max-height: 810px) and (min-width: 901px) {
+  .sidebar-bottom {
+    display: none;
+  }
+}
+.life-period {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.life-period select {
+  min-width: 120px;
+}

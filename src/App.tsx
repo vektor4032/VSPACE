@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import {
   AnimatePresence,
   motion,
@@ -31,6 +31,10 @@ import { Food } from "./pages/Food";
 import { Insights } from "./pages/Insights";
 import { SettingsPage } from "./pages/SettingsPage";
 
+const Life = lazy(() =>
+  import("./life/Life").then((m) => ({ default: m.Life })),
+);
+
 function App() {
   const workspace = useWorkspace();
   const { session } = useAuth();
@@ -45,7 +49,7 @@ function App() {
       ? "error"
       : "saved";
   const [page, setPage] = useState<Page>(() => {
-    const p = location.hash.slice(1);
+    const p = location.hash.slice(1).split("?")[0];
     return nav.some((n) => n.id === p) ? (p as Page) : "home";
   });
   const [notice, setNotice] = useState("");
@@ -56,7 +60,7 @@ function App() {
   const reduce = useReducedMotion();
   useEffect(() => {
     const handler = () => {
-      const p = location.hash.slice(1);
+      const p = location.hash.slice(1).split("?")[0];
       if (nav.some((n) => n.id === p)) setPage(p as Page);
     };
     window.addEventListener("hashchange", handler);
@@ -125,7 +129,7 @@ function App() {
               {nav.map((n, i) => (
                 <button
                   key={n.id}
-                  className={`nav-item ${page === n.id ? "active" : ""} ${i === 6 ? "nav-settings" : ""}`}
+                  className={`nav-item ${page === n.id ? "active" : ""} ${n.id === "settings" ? "nav-settings" : ""}`}
                   aria-current={page === n.id ? "page" : undefined}
                   onClick={() => go(n.id)}
                 >
@@ -253,6 +257,12 @@ function App() {
                 >
                   {page === "home" ? (
                     <Home newTask={() => setNewTask(true)} />
+                  ) : page === "life" ? (
+                    <Suspense
+                      fallback={<p role="status">Открываем мою жизнь…</p>}
+                    >
+                      <Life />
+                    </Suspense>
                   ) : page === "habits" ? (
                     <Habits />
                   ) : page === "planner" ? (
