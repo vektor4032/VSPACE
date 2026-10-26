@@ -57,7 +57,7 @@ test("weekly priorities, shared tasks, goals and journals survive reload", async
     .getByRole("button", { name: "Сохранить цель", exact: true })
     .click();
   await page.getByLabel("Купить скетчбук", { exact: true }).check();
-  await expect(page.locator(".goal-card")).toContainText("50% выполнено");
+  await expect(page.locator(".goal-card")).toContainText("50% шагов");
   await saved(page);
   await page.reload();
   await expect(
@@ -287,4 +287,97 @@ test("recipe records only explicitly consumed one-portion nutrition", async ({
   await open(page, "nutrition");
   await expect(page.locator(".food-log-row")).toHaveCount(1);
   await expect(page.locator(".food-log-row")).toContainText("≈");
+});
+
+test("daily challenge calendar and ring persist independently from steps for 21 and 90 days", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2026-10-26T12:00:00Z"));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, "goals");
+  await page.getByRole("button", { name: "Новая цель", exact: true }).click();
+  await page.getByLabel("Моя главная цель").fill("Читать каждый вечер");
+  await page.getByLabel("Дата старта").fill("2026-10-25");
+  await page.getByLabel("Новый шаг").fill("Выбрать книгу");
+  await page
+    .getByRole("button", { name: "Сохранить цель", exact: true })
+    .click();
+  const card = page
+    .locator(".goal-card")
+    .filter({ hasText: "Читать каждый вечер" });
+  await expect(card.locator(".challenge-day")).toHaveCount(21);
+  const yesterday = card.getByRole("checkbox", {
+    name: "Читать каждый вечер: 25 октября 2026 г.",
+    exact: true,
+  });
+  const today = card.getByRole("checkbox", {
+    name: "Читать каждый вечер: 26 октября 2026 г.",
+    exact: true,
+  });
+  await yesterday.check();
+  await today.check();
+  await expect(
+    card.getByRole("checkbox", {
+      name: "Читать каждый вечер: 27 октября 2026 г.",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(card.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "10",
+  );
+  await expect(card).toContainText("2 / 21 дней выполнено");
+  await card.getByLabel("Выбрать книгу", { exact: true }).check();
+  await expect(card.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "10",
+  );
+  await card
+    .getByRole("button", { name: "Изменить цель", exact: true })
+    .click();
+  await page.getByLabel("Зачем мне это?").fill("Моё время для себя");
+  await page
+    .getByRole("button", { name: "Сохранить цель", exact: true })
+    .click();
+  await saved(page);
+  await page.reload();
+  await expect(yesterday).toBeChecked();
+  await expect(today).toBeChecked();
+  await expect(card.getByLabel("Выбрать книгу", { exact: true })).toBeChecked();
+  await yesterday.uncheck();
+  await saved(page);
+  await page.reload();
+  await expect(yesterday).not.toBeChecked();
+  await expect(today).toBeChecked();
+  await expect(card.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "5",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("button", { name: "Новая цель", exact: true }).click();
+  await page.getByLabel("Моя главная цель").fill("Двигаться 90 дней");
+  await page
+    .getByRole("combobox", { name: "Период", exact: true })
+    .selectOption("90");
+  await page
+    .getByRole("button", { name: "Сохранить цель", exact: true })
+    .click();
+  const long = page
+    .locator(".goal-card")
+    .filter({ hasText: "Двигаться 90 дней" });
+  await expect(long.locator(".challenge-day")).toHaveCount(90);
+  await long.locator(".challenge-day input:not(:disabled)").first().check();
+  await expect(long.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
+  await expect(long).toContainText("1 / 90 дней выполнено");
+  await open(page, "overview");
+  await expect(
+    page.locator(".life-goal-link").filter({ hasText: "Читать каждый вечер" }),
+  ).toContainText("1 / 21 дней");
 });

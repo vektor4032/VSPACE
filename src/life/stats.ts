@@ -46,6 +46,22 @@ export function goalProgress(goal: Goal, today: string) {
     percent: goal.steps.length ? (done / goal.steps.length) * 100 : 0,
   };
 }
+// Only dated completions within the challenge and up to today contribute.
+export function challengeProgress(goal: Goal, today: string) {
+  const { end, elapsed } = goalProgress(goal, today);
+  const days = dateRange(end, goal.duration);
+  const done = days.filter(
+    (date) => date <= today && goal.dailyEntries[date] === true,
+  ).length;
+  return {
+    end,
+    elapsed,
+    days,
+    done,
+    total: goal.duration,
+    percent: (done / goal.duration) * 100,
+  };
+}
 export function moneyToMinor(raw: string): number {
   const value = raw.trim().replace(/\s/g, "").replace(",", ".");
   if (!/^\d{1,10}(\.\d{1,2})?$/.test(value))

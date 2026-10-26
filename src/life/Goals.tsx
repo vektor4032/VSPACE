@@ -6,7 +6,12 @@ import { uid } from "../data";
 import { Modal, Empty, Ring } from "../components/ui";
 import { areas } from "./schema";
 import type { Goal } from "./schema";
-import { areaLabels, goalProgress, dateRange } from "./stats";
+import {
+  areaLabels,
+  goalProgress,
+  challengeProgress,
+  dateRange,
+} from "./stats";
 import { DeleteButton } from "./ui";
 export function Goals() {
   const { state, update, today } = useApp();
@@ -18,7 +23,7 @@ export function Goals() {
         <div>
           <h2>Фокус на 21 и 90 дней</h2>
           <p className="field-help">
-            Выбери цель, разбей на шаги и наблюдай за результатом.
+            Отмечай выполнение по дням и наблюдай за прогрессом челленджа.
           </p>
         </div>
         <button className="btn primary" onClick={() => setEdit(null)}>
@@ -43,6 +48,7 @@ export function Goals() {
           .filter((g) => !filter || g.duration === filter)
           .map((g) => {
             const p = goalProgress(g, today);
+            const daily = challengeProgress(g, today);
             const days = dateRange(
               today < g.start ? g.start : today > p.end ? p.end : today,
               Math.max(0, p.elapsed),
@@ -71,15 +77,22 @@ export function Goals() {
                 </div>
                 <h3>{g.title}</h3>
                 <div className="goal-progress">
-                  <Ring value={p.percent} size={86} />
+                  <div
+                    role="progressbar"
+                    aria-label={`Прогресс челленджа: ${g.title}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(daily.percent)}
+                    aria-valuetext={`${daily.done} из ${daily.total} дней выполнено`}
+                  >
+                    <Ring value={daily.percent} size={96} />
+                  </div>
                   <div>
                     <strong>
-                      {p.done} / {p.total} шагов
+                      {daily.done} / {daily.total} дней выполнено
                     </strong>
                     <p className="field-help">
-                      {!p.total
-                        ? "Добавь шаги для расчёта прогресса."
-                        : `${Math.round(p.percent)}% выполнено`}
+                      {Math.round(daily.percent)}% челленджа
                     </p>
                   </div>
                 </div>
@@ -92,6 +105,62 @@ export function Goals() {
                       : `Прошло ${p.elapsed} из ${g.duration} дней`}
                 </p>
                 {g.why && <p className="life-note">{g.why}</p>}
+                <fieldset className="challenge-tracker">
+                  <legend>Ежедневные отметки</legend>
+                  <p className="field-help">
+                    Отметь день, когда выполнила челлендж. Можно заполнить
+                    прошедшие дни; будущие откроются по дате.
+                  </p>
+                  <div className="challenge-days">
+                    {daily.days.map((date, index) => (
+                      <label
+                        key={date}
+                        className={`challenge-day ${date === today ? "is-today" : ""} ${date > today ? "is-future" : ""}`}
+                      >
+                        <span className="challenge-day-number">
+                          День {index + 1}
+                        </span>
+                        <input
+                          type="checkbox"
+                          aria-label={`${g.title}: ${fmt(date, { day: "numeric", month: "long", year: "numeric" })}`}
+                          checked={g.dailyEntries[date] === true}
+                          disabled={date > today}
+                          onChange={() =>
+                            update((s) => ({
+                              ...s,
+                              life: {
+                                ...s.life,
+                                goals: s.life.goals.map((goal) =>
+                                  goal.id === g.id
+                                    ? {
+                                        ...goal,
+                                        dailyEntries: {
+                                          ...goal.dailyEntries,
+                                          [date]: !goal.dailyEntries[date],
+                                        },
+                                      }
+                                    : goal,
+                                ),
+                              },
+                            }))
+                          }
+                        />
+                        <span>
+                          {fmt(date, { day: "numeric", month: "short" })}
+                        </span>
+                        {date === today && <small>Сегодня</small>}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                {g.steps.length > 0 && (
+                  <div className="goal-step-summary">
+                    <h4>Шаги и этапы</h4>
+                    <span>
+                      {p.done} / {p.total} · {Math.round(p.percent)}% шагов
+                    </span>
+                  </div>
+                )}
                 <div className="life-checklist">
                   {g.steps.map((step) => (
                     <label key={step.id}>
@@ -154,7 +223,7 @@ export function Goals() {
         .length && (
         <Empty
           title="Большое начинается с одного шага"
-          description="Создай свою первую цель. Прогресс считается по выполненным шагам, а не по прошедшим дням."
+          description="Создай свою первую цель. Отмечай выполнение каждый день — круг покажет долю выполненных дней."
         />
       )}
       {edit !== undefined && (
@@ -183,6 +252,7 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
         ? [...steps, { id: uid(), title: draft.trim(), done: false }]
         : steps,
       habitIds: habits,
+      dailyEntries: goal?.dailyEntries || {},
     };
     next.steps = next.steps.map((step) => ({
       ...step,
@@ -201,7 +271,9 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
       life: {
         ...s.life,
         goals: goal
-          ? s.life.goals.map((g) => (g.id === goal.id ? next : g))
+          ? s.life.goals.map((g) =>
+              g.id === goal.id ? { ...next, dailyEntries: g.dailyEntries } : g,
+            )
           : [...s.life.goals, next],
       },
     }));
@@ -305,7 +377,8 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
             </button>
           </div>
           <small className="field-help">
-            Шаги одинаково влияют на процент выполнения.
+            Шаги — отдельные этапы. Круг прогресса считается по ежедневным
+            отметкам.
           </small>
         </fieldset>
         {state.habits.length > 0 && (

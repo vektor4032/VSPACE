@@ -5,6 +5,7 @@ import {
   moneyToMinor,
   nutritionStats,
   goalProgress,
+  challengeProgress,
   mondayOf,
   periodSummary,
 } from "../src/life/stats";
@@ -27,6 +28,7 @@ const goal: Goal = {
   why: "",
   reward: "",
   habitIds: [],
+  dailyEntries: {},
   steps: [
     { id: "one", title: "Начать", done: false },
     { id: "two", title: "Завершить", done: true },
@@ -172,5 +174,53 @@ describe("life data and calculations", () => {
       done: 0,
       habits: 0,
     });
+  });
+});
+
+it("daily challenge progress ignores steps, future and out-of-period marks and migrates old goals", () => {
+  const old = structuredClone(goal) as Partial<Goal>;
+  delete old.dailyEntries;
+  const state = structuredClone(initialState);
+  state.life.goals = [old as Goal];
+  expect(parseImport(JSON.stringify(state)).life.goals[0].dailyEntries).toEqual(
+    {},
+  );
+  const tracked = {
+    ...goal,
+    dailyEntries: {
+      "2026-09-30": true,
+      "2026-10-01": true,
+      "2026-10-02": false,
+      "2026-10-03": true,
+      "2026-10-21": true,
+      "2026-10-22": true,
+    },
+  };
+  expect(challengeProgress(tracked, "2026-10-03")).toMatchObject({
+    done: 2,
+    total: 21,
+    percent: (2 / 21) * 100,
+  });
+  expect(challengeProgress(tracked, "2026-11-01")).toMatchObject({
+    done: 3,
+    total: 21,
+  });
+  expect(challengeProgress(tracked, "2026-09-30").done).toBe(0);
+  expect(
+    challengeProgress({ ...goal, duration: 90 }, "2026-10-01").days,
+  ).toHaveLength(90);
+});
+it("merges independent daily challenge checkboxes from two devices", () => {
+  const base = structuredClone(initialState);
+  base.life.goals = [structuredClone(goal)];
+  const a = structuredClone(base),
+    b = structuredClone(base);
+  a.life.goals[0].dailyEntries["2026-10-01"] = true;
+  b.life.goals[0].dailyEntries["2026-10-02"] = true;
+  const result = mergeWorkspaces(base, a, b);
+  expect(result.conflicts).toEqual([]);
+  expect(result.data.life.goals[0].dailyEntries).toEqual({
+    "2026-10-01": true,
+    "2026-10-02": true,
   });
 });

@@ -22,6 +22,7 @@ export const goalSchema = z.object({
   reward: z.string().max(500),
   steps: z.array(z.object({ id, title, done: z.boolean() })).max(100),
   habitIds: z.array(id).max(200),
+  dailyEntries: z.record(date, z.boolean()).default(() => ({})),
 });
 export const journalSchema = z.object({
   mood: z.number().int().min(1).max(5),

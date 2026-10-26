@@ -7,7 +7,7 @@ import {
   financeStats,
   rubles,
   periodSummary,
-  goalProgress,
+  challengeProgress,
   dateRange,
   mondayOf,
 } from "./stats";
@@ -109,7 +109,7 @@ export function Overview({ open }: { open: (t: LifeTab) => void }) {
             </button>
           </div>
           {state.life.goals.slice(0, 3).map((g) => {
-            const p = goalProgress(g, today);
+            const p = challengeProgress(g, today);
             return (
               <button
                 className="life-goal-link"
@@ -119,7 +119,7 @@ export function Overview({ open }: { open: (t: LifeTab) => void }) {
                 <span>
                   {g.title}
                   <small>
-                    {p.done} / {p.total} шагов · до {fmt(p.end)}
+                    {p.done} / {p.total} дней · до {fmt(p.end)}
                   </small>
                 </span>
                 <strong>{Math.round(p.percent)}%</strong>

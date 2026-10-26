@@ -378,3 +378,52 @@ test("life nutrition, journals and finance synchronize across computer and phone
   await desktop.close();
   await mobile.close();
 });
+
+test("daily challenge checkboxes synchronize and can be undone on another device", async ({
+  browser,
+}) => {
+  const server = new MockCloud();
+  const desktop = await browser.newContext(),
+    mobile = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
+  await server.install(desktop);
+  await server.install(mobile);
+  const a = await desktop.newPage(),
+    b = await mobile.newPage();
+  await login(a);
+  await login(b);
+  await a.goto("/#life?tab=goals");
+  await a.getByRole("button", { name: "Новая цель", exact: true }).click();
+  await a.getByLabel("Моя главная цель").fill("Чтение каждый день");
+  await a.getByRole("button", { name: "Сохранить цель", exact: true }).click();
+  await a.locator(".challenge-day input:not(:disabled)").first().check();
+  await synced(a);
+  await b.goto("/#settings");
+  await b
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(b);
+  await b.goto("/#life?tab=goals");
+  await expect(
+    b.locator(".challenge-day input:not(:disabled)").first(),
+  ).toBeChecked();
+  await b.locator(".challenge-day input:not(:disabled)").first().uncheck();
+  await synced(b);
+  await a.goto("/#settings");
+  await a
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(a);
+  await a.goto("/#life?tab=goals");
+  await expect(
+    a.locator(".challenge-day input:not(:disabled)").first(),
+  ).not.toBeChecked();
+  await expect(
+    a.getByRole("progressbar", {
+      name: "Прогресс челленджа: Чтение каждый день",
+    }),
+  ).toHaveAttribute("aria-valuenow", "0");
+  await desktop.close();
+  await mobile.close();
+});
