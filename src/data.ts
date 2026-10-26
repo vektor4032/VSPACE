@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { lifeSchema, emptyLife } from "./life/schema";
+import { recipeSchema } from "./recipes/schema";
+export type { Recipe } from "./recipes/schema";
+import type { Recipe } from "./recipes/schema";
 export const localDate = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const shiftDate = (date: string, n: number) => {
@@ -65,6 +68,10 @@ export const projectSchema = z.object({
 });
 export const stateSchema = z.object({
   life: lifeSchema.default(() => structuredClone(emptyLife)),
+  savedRecipes: z
+    .array(recipeSchema)
+    .max(500)
+    .default(() => []),
   version: z.literal(1),
   profile: z.object({ name: z.string().max(50), focus: z.string().max(150) }),
   settings: z.object({
@@ -102,6 +109,7 @@ export type Habit = z.infer<typeof habitSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export const initialState: AppState = {
   life: structuredClone(emptyLife),
+  savedRecipes: [],
   version: 1,
   profile: { name: "", focus: "" },
   settings: { accent: "lime", theme: "dark", motion: "full", three: true },
@@ -129,6 +137,7 @@ export function parseImport(raw: string): AppState {
     s.habits,
     s.projects,
     s.meals,
+    s.savedRecipes,
     s.life.goals,
     s.life.thoughts,
     s.life.transactions,
@@ -176,20 +185,10 @@ export function habitStreak(h: Habit, today = localDate()) {
   }
   return count;
 }
-export type Recipe = {
-  id: string;
-  title: string;
-  category: string;
-  time: number;
-  servings: number;
-  calories: number;
-  emoji: string;
-  color: string;
-  ingredients: [string, number, string][];
-  steps: string[];
-};
 export const recipes: Recipe[] = [
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "oats",
     title: "Овсянка с бананом и орехами",
     category: "Завтрак",
@@ -213,6 +212,8 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "salad",
     title: "Тёплый боул с киноа",
     category: "Обед",
@@ -238,6 +239,8 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "salmon",
     title: "Лосось с брокколи и лимоном",
     category: "Ужин",
@@ -262,6 +265,8 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "pasta",
     title: "Паста с томатами и базиликом",
     category: "Обед",
@@ -286,6 +291,8 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "eggs",
     title: "Шакшука с тёплыми специями",
     category: "Завтрак",
@@ -311,6 +318,8 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    sourceUrl: "",
+    sourceName: "VSPACE",
     id: "soup",
     title: "Крем-суп из красной чечевицы",
     category: "Ужин",

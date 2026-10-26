@@ -427,3 +427,62 @@ test("daily challenge checkboxes synchronize and can be undone on another device
   await desktop.close();
   await mobile.close();
 });
+
+test("saved recipe book synchronizes complete recipes and edits between devices", async ({
+  browser,
+}) => {
+  const server = new MockCloud();
+  const desktop = await browser.newContext(),
+    mobile = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
+  await server.install(desktop);
+  await server.install(mobile);
+  const a = await desktop.newPage(),
+    b = await mobile.newPage();
+  await login(a);
+  await login(b);
+  await a.goto("/#food");
+  await a.getByRole("button", { name: "Добавить рецепт", exact: true }).click();
+  await a.getByLabel("Название рецепта").fill("Суп из моей книги");
+  await a
+    .getByLabel("Ингредиенты с количеством")
+    .fill("300 г тыквы\n500 мл воды");
+  await a.getByLabel("Как приготовить").fill("Сварить тыкву и измельчить.");
+  await a
+    .getByRole("button", { name: "Сохранить рецепт", exact: true })
+    .click();
+  await synced(a);
+  await b.goto("/#settings");
+  await b
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(b);
+  await b.goto("/#food");
+  await b.getByRole("button", { name: "Моя книга", exact: true }).click();
+  await b
+    .getByRole("button", { name: "Открыть рецепт: Суп из моей книги" })
+    .click();
+  await expect(b.getByRole("dialog")).toContainText("300 г тыквы");
+  await b.getByRole("button", { name: "Изменить рецепт", exact: true }).click();
+  await b.getByLabel("Калории на порцию").fill("140");
+  await b
+    .getByRole("button", { name: "Сохранить рецепт", exact: true })
+    .click();
+  await synced(b);
+  await a.goto("/#settings");
+  await a
+    .getByRole("button", { name: "Синхронизировать", exact: true })
+    .click();
+  await synced(a);
+  await a.goto("/#food");
+  await a
+    .getByRole("button", { name: "Открыть рецепт: Суп из моей книги" })
+    .click();
+  await expect(a.getByRole("dialog")).toContainText("140 ккал / порция");
+  expect(
+    server.rows.get(ids["one@example.test"])!.data.savedRecipes,
+  ).toHaveLength(1);
+  await desktop.close();
+  await mobile.close();
+});

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import type { ReactNode, CSSProperties } from "react";
 import { X } from "lucide-react";
 
@@ -55,6 +55,7 @@ export function Modal({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const previous = document.activeElement as HTMLElement;
     ref.current?.showModal();
@@ -66,7 +67,7 @@ export function Modal({
     <dialog
       ref={ref}
       className="modal"
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onCancel={onClose}
       onClick={(e) => {
         if (e.target === ref.current) onClose();
@@ -75,7 +76,7 @@ export function Modal({
       <div className="modal-head">
         <div>
           <span className="eyebrow">YOUR SPACE, YOUR RULES</span>
-          <h2 id="dialog-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
         </div>
         <IconButton label="Закрыть" onClick={onClose}>
           <X size={20} />

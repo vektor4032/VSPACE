@@ -60,6 +60,33 @@ try {
   const water = await page.locator(".water-count").textContent();
   if (!water.includes("0,25"))
     throw Error("Offline life entry was not persisted");
+  await page.goto(appUrl + "#food");
+  await page
+    .getByRole("button", { name: "Добавить рецепт", exact: true })
+    .click();
+  await page.getByLabel("Название рецепта").fill("Мой офлайн-рецепт");
+  await page
+    .getByLabel("Ингредиенты с количеством")
+    .fill("200 г риса\n1 морковь");
+  await page
+    .getByLabel("Как приготовить")
+    .fill("Сварить рис.\nДобавить приготовленную морковь.");
+  await page
+    .getByRole("button", { name: "Сохранить рецепт", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+  await page.waitForFunction(() =>
+    document
+      .querySelector(".local-badge")
+      ?.textContent?.includes("Сохранено локально"),
+  );
+  await page.reload();
+  await page.getByRole("button", { name: "Моя книга", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Открыть рецепт: Мой офлайн-рецепт" })
+    .click();
+  if (!(await page.getByRole("dialog").textContent()).includes("200 г риса"))
+    throw Error("Saved recipe unavailable offline");
   if (errors.length) throw Error(errors.join("\n"));
   console.log(
     JSON.stringify({
@@ -68,6 +95,7 @@ try {
       offlineRecipes: recipeCount,
       offlinePosters: posters,
       offlineLifePersistence: true,
+      offlineSavedRecipe: true,
       browserErrors: errors,
     }),
   );
