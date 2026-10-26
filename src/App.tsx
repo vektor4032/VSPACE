@@ -13,7 +13,14 @@ import {
   CircleHelp,
   Menu,
   ShieldCheck,
+  Search,
+  Plus,
 } from "lucide-react";
+import { MyDay } from "./features/MyDay";
+import { QuickCreate } from "./features/QuickCreate";
+import type { QuickKind } from "./features/QuickCreate";
+import { GlobalSearch } from "./features/GlobalSearch";
+import { ReminderDelivery } from "./features/Reminders";
 import { localDate } from "./data";
 
 import { useAuth } from "./cloud/Auth";
@@ -39,7 +46,28 @@ function App() {
   const workspace = useWorkspace();
   const { session } = useAuth();
   const state = workspace.data;
-  const update = workspace.update;
+  const update: typeof workspace.update = (fn) =>
+    workspace.update((previous) => {
+      const next = fn(previous);
+      if (
+        next.features.home.celebrate &&
+        (next.tasks.filter((t) => t.done).length >
+          previous.tasks.filter((t) => t.done).length ||
+          next.life.goals.some(
+            (g) =>
+              Object.values(g.dailyEntries).filter(Boolean).length >
+              Object.values(
+                previous.life.goals.find((x) => x.id === g.id)?.dailyEntries ||
+                  {},
+              ).filter(Boolean).length,
+          ))
+      ) {
+        queueMicrotask(() =>
+          window.dispatchEvent(new CustomEvent("vspace:celebrate")),
+        );
+      }
+      return next;
+    });
   const loading = !workspace.ready;
   const loadFailed = !!workspace.fatal;
   const error = workspace.fatal || workspace.localError;
@@ -56,6 +84,92 @@ function App() {
   const [menu, setMenu] = useState(false);
   const [help, setHelp] = useState(false);
   const [newTask, setNewTask] = useState(false);
+  const [quick, setQuick] = useState<QuickKind | null>(null);
+  const [search, setSearch] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  useEffect(() => {
+    if (workspace.ready && !location.hash) setPage(state.features.home.start);
+  }, [workspace.ready, state.features.home.start]);
+  useEffect(() => {
+    const handle = (event: Event) => {
+      const kind = (event as CustomEvent).detail;
+      if (
+        ["menu", "task", "expense", "thought", "food", "journal"].includes(kind)
+      )
+        setQuick(kind);
+    };
+    const keyboard = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearch(true);
+      }
+    };
+    const notificationMessage = (event: MessageEvent) => {
+      if (event.data?.type === "VSPACE_OPEN_DAY") {
+        location.hash = "day";
+        setPage("day");
+        setMenu(false);
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", notificationMessage);
+    const celebrate = () => {
+      setCelebrating(true);
+    };
+    window.addEventListener("vspace:quick", handle);
+    window.addEventListener("keydown", keyboard);
+    window.addEventListener("vspace:celebrate", celebrate);
+    return () => {
+      navigator.serviceWorker?.removeEventListener(
+        "message",
+        notificationMessage,
+      );
+      window.removeEventListener("vspace:quick", handle);
+      window.removeEventListener("keydown", keyboard);
+      window.removeEventListener("vspace:celebrate", celebrate);
+    };
+  }, []);
+  useEffect(() => {
+    if (!celebrating) return;
+    const timer = setTimeout(() => setCelebrating(false), 1600);
+    return () => clearTimeout(timer);
+  }, [celebrating]);
+  useEffect(() => {
+    let observer: MutationObserver | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const focus = () => {
+      observer?.disconnect();
+      if (timeout) clearTimeout(timeout);
+      const id = new URLSearchParams(location.hash.split("?")[1] || "").get(
+        "focus",
+      );
+      if (!id) return;
+      const find = () => {
+        const element = document.getElementById(id);
+        if (
+          !element ||
+          element.closest("[data-page]")?.getAttribute("data-page") !==
+            location.hash.slice(1).split("?")[0]
+        )
+          return false;
+        element.scrollIntoView({ block: "center" });
+        element.focus({ preventScroll: true });
+        observer?.disconnect();
+        return true;
+      };
+      if (!find()) {
+        observer = new MutationObserver(find);
+        observer.observe(document.body, { childList: true, subtree: true });
+        timeout = setTimeout(() => observer?.disconnect(), 5000);
+      }
+    };
+    focus();
+    window.addEventListener("hashchange", focus);
+    return () => {
+      observer?.disconnect();
+      if (timeout) clearTimeout(timeout);
+      window.removeEventListener("hashchange", focus);
+    };
+  }, [page]);
   const [today, setToday] = useState(localDate());
   const reduce = useReducedMotion();
   useEffect(() => {
@@ -202,6 +316,12 @@ function App() {
                 <strong>{nav.find((n) => n.id === page)?.label}</strong>
               </div>
               <div className="top-actions">
+                <IconButton
+                  label="Поиск по пространству"
+                  onClick={() => setSearch(true)}
+                >
+                  <Search size={18} />
+                </IconButton>
                 <span
                   className={`local-badge save-${saveStatus}`}
                   role="status"
@@ -248,6 +368,7 @@ function App() {
               <AnimatePresence mode="wait">
                 <motion.div
                   key={page}
+                  data-page={page}
                   initial={{ opacity: 0, y: reduce ? 0 : 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
@@ -257,6 +378,8 @@ function App() {
                 >
                   {page === "home" ? (
                     <Home newTask={() => setNewTask(true)} />
+                  ) : page === "day" ? (
+                    <MyDay />
                   ) : page === "life" ? (
                     <Suspense
                       fallback={<p role="status">Открываем мою жизнь…</p>}
@@ -304,6 +427,32 @@ function App() {
               <span>Ещё</span>
             </button>
           </nav>
+          <button
+            className="global-add"
+            aria-label="Быстрая запись"
+            onClick={() => setQuick("menu")}
+          >
+            <Plus size={24} />
+            <span>Записать</span>
+          </button>
+          {quick && (
+            <QuickCreate
+              key={quick}
+              kind={quick}
+              onClose={() => setQuick(null)}
+            />
+          )}
+          {search && <GlobalSearch onClose={() => setSearch(false)} />}
+          <ReminderDelivery />
+          {celebrating &&
+            state.features.home.celebrate &&
+            state.settings.motion === "full" &&
+            !reduce && (
+              <div className="completion-burst" aria-hidden="true">
+                <span>✳</span>
+                <strong>Ещё один шаг!</strong>
+              </div>
+            )}
           {notice && (
             <div role="status" className="toast">
               <Check size={18} />

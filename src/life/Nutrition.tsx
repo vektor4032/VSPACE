@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { dateParam, hashParam } from "../features/navigation";
+import { useState, useEffect } from "react";
 import { Plus, Droplets, Pencil } from "lucide-react";
 import { useApp } from "../context";
 import { uid } from "../data";
@@ -20,7 +21,12 @@ const nutrientLabels = {
 };
 export function Nutrition() {
   const { state, update, today, toast, go } = useApp();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(() => dateParam(today));
+  useEffect(() => {
+    const handler = () => setDate(dateParam(today));
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [today]);
   const [edit, setEdit] = useState<FoodEntry | null>();
   const [targetsOpen, setTargetsOpen] = useState(false);
   const entries = state.life.foodLog.filter((e) => e.date === date);

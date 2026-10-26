@@ -72,6 +72,12 @@ export function normalizeMeal(
     .filter(Boolean);
   const parsed = recipeSchema.safeParse({
     id: "mealdb-" + id,
+    cover:
+      typeof meal.strMealThumb === "string" &&
+      meal.strMealThumb.startsWith("https://") &&
+      meal.strMealThumb.length < 2000
+        ? meal.strMealThumb
+        : "",
     title: String(meal.strMeal || ""),
     category: meal.strCategory === "Breakfast" ? "Завтрак" : category,
     time: null,

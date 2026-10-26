@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coverSchema } from "../features/media";
 const date = z.iso.date();
 const id = z.string().min(1).max(300);
 const title = z.string().trim().min(1).max(300);
@@ -22,6 +23,12 @@ export const goalSchema = z.object({
   reward: z.string().max(500),
   steps: z.array(z.object({ id, title, done: z.boolean() })).max(100),
   habitIds: z.array(id).max(200),
+  weekdays: z
+    .array(z.number().int().min(0).max(6))
+    .min(1)
+    .max(7)
+    .default(() => [0, 1, 2, 3, 4, 5, 6]),
+  cover: coverSchema.default(""),
   dailyEntries: z.record(date, z.boolean()).default(() => ({})),
 });
 export const journalSchema = z.object({

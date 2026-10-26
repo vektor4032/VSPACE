@@ -50,7 +50,12 @@ export function goalProgress(goal: Goal, today: string) {
 export function challengeProgress(goal: Goal, today: string) {
   const { end, elapsed } = goalProgress(goal, today);
   const days = dateRange(end, goal.duration);
-  const done = days.filter(
+  const plannedDays = days.filter((date) =>
+    (goal.weekdays || [0, 1, 2, 3, 4, 5, 6]).includes(
+      new Date(date + "T12:00:00Z").getUTCDay(),
+    ),
+  );
+  const done = plannedDays.filter(
     (date) => date <= today && goal.dailyEntries[date] === true,
   ).length;
   return {
@@ -58,8 +63,9 @@ export function challengeProgress(goal: Goal, today: string) {
     elapsed,
     days,
     done,
-    total: goal.duration,
-    percent: (done / goal.duration) * 100,
+    plannedDays,
+    total: plannedDays.length,
+    percent: plannedDays.length ? (done / plannedDays.length) * 100 : 0,
   };
 }
 export function moneyToMinor(raw: string): number {

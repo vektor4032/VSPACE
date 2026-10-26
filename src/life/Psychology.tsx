@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { dateParam, hashParam } from "../features/navigation";
+import { useState, useEffect } from "react";
 import { Plus, Check, ArrowUpRight } from "lucide-react";
 import { useApp, fmt } from "../context";
 import { uid } from "../data";
@@ -21,7 +22,13 @@ const buckets = {
   do: "Сделать",
   later: "Пока оставить",
 };
-function JournalForm({ date, onClose }: { date: string; onClose: () => void }) {
+export function JournalForm({
+  date,
+  onClose,
+}: {
+  date: string;
+  onClose: () => void;
+}) {
   const { state, update, toast } = useApp();
   const entry = state.life.journal[date];
   const [mood, setMood] = useState(
@@ -128,9 +135,16 @@ function JournalForm({ date, onClose }: { date: string; onClose: () => void }) {
 }
 export function Psychology() {
   const { state, update, today, toast } = useApp();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(() => dateParam(today));
+  useEffect(() => {
+    const handler = () => setDate(dateParam(today));
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [today]);
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"diary" | "thoughts">("diary");
+  const [mode, setMode] = useState<"diary" | "thoughts">(() =>
+    hashParam("mode") === "thoughts" ? "thoughts" : "diary",
+  );
   const [thought, setThought] = useState(false);
   const [editingThought, setEditingThought] = useState<
     LifeState["thoughts"][number] | null
@@ -318,7 +332,12 @@ export function Psychology() {
                 {state.life.thoughts
                   .filter((t) => t.bucket === bucket)
                   .map((t) => (
-                    <article className="thought-card" key={t.id}>
+                    <article
+                      className="thought-card"
+                      key={t.id}
+                      id={"thought-" + t.id}
+                      tabIndex={-1}
+                    >
                       <p>{t.text}</p>
                       <button
                         className="text-link"

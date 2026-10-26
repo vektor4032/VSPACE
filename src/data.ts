@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { featuresSchema, emptyFeatures } from "./features/schema";
 import { lifeSchema, emptyLife } from "./life/schema";
 import { recipeSchema } from "./recipes/schema";
 export type { Recipe } from "./recipes/schema";
@@ -67,6 +68,7 @@ export const projectSchema = z.object({
   color: z.enum(["lime", "violet", "mint"]),
 });
 export const stateSchema = z.object({
+  features: featuresSchema.default(() => structuredClone(emptyFeatures)),
   life: lifeSchema.default(() => structuredClone(emptyLife)),
   savedRecipes: z
     .array(recipeSchema)
@@ -75,8 +77,8 @@ export const stateSchema = z.object({
   version: z.literal(1),
   profile: z.object({ name: z.string().max(50), focus: z.string().max(150) }),
   settings: z.object({
-    accent: z.enum(["lime", "mint", "violet"]),
-    theme: z.enum(["dark", "forest"]),
+    accent: z.enum(["lime", "mint", "violet", "sage", "lavender", "graphite"]),
+    theme: z.enum(["dark", "forest", "graphite"]),
     motion: z.enum(["full", "reduced", "off"]),
     three: z.boolean(),
   }),
@@ -108,6 +110,7 @@ export type Task = z.infer<typeof taskSchema>;
 export type Habit = z.infer<typeof habitSchema>;
 export type Project = z.infer<typeof projectSchema>;
 export const initialState: AppState = {
+  features: structuredClone(emptyFeatures),
   life: structuredClone(emptyLife),
   savedRecipes: [],
   version: 1,
@@ -138,6 +141,11 @@ export function parseImport(raw: string): AppState {
     s.projects,
     s.meals,
     s.savedRecipes,
+    s.features.batches,
+    s.features.shoppingExtras,
+    s.features.reminders,
+    s.features.recurring,
+    s.features.savings,
     s.life.goals,
     s.life.thoughts,
     s.life.transactions,
@@ -187,6 +195,7 @@ export function habitStreak(h: Habit, today = localDate()) {
 }
 export const recipes: Recipe[] = [
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "oats",
@@ -212,6 +221,7 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "salad",
@@ -239,6 +249,7 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "salmon",
@@ -265,6 +276,7 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "pasta",
@@ -291,6 +303,7 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "eggs",
@@ -318,6 +331,7 @@ export const recipes: Recipe[] = [
     ],
   },
   {
+    cover: "",
     sourceUrl: "",
     sourceName: "VSPACE",
     id: "soup",

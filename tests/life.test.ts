@@ -29,6 +29,8 @@ const goal: Goal = {
   reward: "",
   habitIds: [],
   dailyEntries: {},
+  weekdays: [0, 1, 2, 3, 4, 5, 6],
+  cover: "",
   steps: [
     { id: "one", title: "Начать", done: false },
     { id: "two", title: "Завершить", done: true },

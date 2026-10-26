@@ -277,7 +277,11 @@ export function Projects() {
       {list.length ? (
         <div className="project-grid">
           {list.map((p, i) => (
-            <article className={`project-card project-${p.color}`} key={p.id}>
+            <article
+              className={`project-card project-${p.color}`}
+              key={p.id}
+              id={"project-" + p.id}
+            >
               <button className="project-open" onClick={() => setDetail(p.id)}>
                 <div className="project-card-top">
                   <span className="tag">{p.category}</span>

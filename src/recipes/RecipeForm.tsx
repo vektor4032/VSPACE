@@ -1,3 +1,5 @@
+import { ImageField } from "../features/ImageField";
+import { parseIngredientLine } from "../features/shopping";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useApp } from "../context";
@@ -16,6 +18,7 @@ export function RecipeForm({
 }) {
   const { state, update, today, toast } = useApp();
   const [error, setError] = useState("");
+  const [cover, setCover] = useState(recipe?.cover || "");
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!recipe && state.savedRecipes.length >= 500) {
@@ -44,7 +47,8 @@ export function RecipeForm({
       calories: number("calories"),
       emoji: recipe?.emoji || "🍽️",
       color: recipe?.color || "green",
-      ingredients: ingredients.map((line) => [line, null, ""]),
+      ingredients: ingredients.map(parseIngredientLine),
+      cover,
       steps,
       sourceUrl: String(form.get("sourceUrl")).trim(),
       sourceName: recipe?.sourceName || "",
@@ -89,6 +93,7 @@ export function RecipeForm({
             ))}
           </select>
         </label>
+        <ImageField value={cover} onChange={setCover} label="Фото блюда" />
         <label>
           Ссылка на источник · необязательно
           <input
@@ -116,8 +121,9 @@ export function RecipeForm({
             placeholder={"200 г риса\n2 помидора\n1 ст. л. масла"}
           />
           <span className="field-help">
-            Каждый ингредиент — с новой строки. Количество сохраняется как
-            текст.
+            Каждый ингредиент — с новой строки: «200 г риса», «2 помидора».
+            Понятные количества попадут в автоматический список покупок;
+            остальные сохранятся текстом.
           </span>
         </label>
         <label>

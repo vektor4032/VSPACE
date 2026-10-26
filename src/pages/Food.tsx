@@ -1,7 +1,9 @@
+import { hashParam } from "../features/navigation";
 import { useState, useEffect, useRef } from "react";
 import { ArrowUpRight, Plus, X, Search, Heart, Clock } from "lucide-react";
 import { uid, recipes } from "../data";
 import type { Recipe } from "../data";
+import { WeeklyMeals } from "../features/WeeklyMeals";
 import { RecipeForm } from "../recipes/RecipeForm";
 import {
   searchOnlineRecipes,
@@ -23,7 +25,36 @@ export function Food() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Все");
   const [favorite, setFavorite] = useState(false);
-  const [selected, setSelected] = useState<Recipe | null>(null);
+  const [foodView, setFoodView] = useState<"recipes" | "plan">(() =>
+    hashParam("view") === "plan" ? "plan" : "recipes",
+  );
+  function switchFoodView(view: "recipes" | "plan") {
+    resetSearch();
+    setFoodView(view);
+    history.replaceState(
+      null,
+      "",
+      view === "plan" ? "#food?view=plan" : "#food",
+    );
+  }
+  const [selected, setSelected] = useState<Recipe | null>(
+    () =>
+      [...recipes, ...state.savedRecipes].find(
+        (r) => r.id === hashParam("find"),
+      ) || null,
+  );
+  useEffect(() => {
+    const handler = () => {
+      setFoodView(hashParam("view") === "plan" ? "plan" : "recipes");
+      const id = hashParam("find");
+      if (id)
+        setSelected(
+          [...recipes, ...state.savedRecipes].find((r) => r.id === id) || null,
+        );
+    };
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [state.savedRecipes]);
   const [date, setDate] = useState(today);
   const library = [...recipes, ...state.savedRecipes];
   const [mode, setMode] = useState<"library" | "saved" | "online">("library");
@@ -135,213 +166,252 @@ export function Food() {
         title="Еда, которая заряжает."
         description="Простые ингредиенты. Немного заботы. Много вкуса."
       />
-      <section className="food-banner">
-        <div>
-          <span className="eyebrow">GOOD FOOD. GOOD MOOD.</span>
-          <h2>
-            Вдохновение
-            <br />
-            на каждый день<span>↗</span>
-          </h2>
-          <p>Своя книга рецептов и новые идеи из интернета.</p>
-        </div>
-        <div className="food-banner-art" aria-hidden="true">
-          <span>🥑</span>
-          <span>🍋</span>
-          <span>✳</span>
-        </div>
-      </section>
-      <div className="toolbar recipe-library-tools">
-        <div className="segmented" aria-label="Источник рецептов">
-          {[
-            ["library", "Все рецепты"],
-            ["saved", "Моя книга"],
-            ["online", "Международный каталог"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              className={mode === value ? "active" : ""}
-              aria-pressed={mode === value}
-              onClick={() => {
-                resetSearch();
-                setMode(value as typeof mode);
-                if (value === "online") {
-                  setCategory(category === "Все" ? "Обед" : category);
-                  setFavorite(false);
-                }
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <button className="btn primary" onClick={() => setForm(null)}>
-          <Plus size={16} />
-          Добавить рецепт
-        </button>
-      </div>
-      <div className="toolbar">
-        <div className="segmented">
-          {(mode === "online"
-            ? ["Завтрак", "Обед", "Ужин"]
-            : ["Все", "Завтрак", "Обед", "Ужин"]
-          ).map((c) => (
-            <button
-              className={category === c ? "active" : ""}
-              key={c}
-              onClick={() => {
-                resetSearch();
-                setCategory(c);
-              }}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+      <div
+        className="segmented food-view-tabs"
+        aria-label="Рецепты или меню недели"
+      >
         <button
-          className={`btn ${favorite ? "selected" : ""}`}
-          aria-pressed={favorite}
-          onClick={() => setFavorite(!favorite)}
+          className={foodView === "recipes" ? "active" : ""}
+          aria-pressed={foodView === "recipes"}
+          onClick={() => switchFoodView("recipes")}
         >
-          <Heart size={16} fill={favorite ? "currentColor" : "none"} />{" "}
-          Избранное
+          Рецепты и поиск
         </button>
-        <div className="search-field">
-          <Search size={17} />
-          <input
-            aria-label="Найти рецепт или ингредиент"
-            placeholder="Рецепт или ингредиент"
-            maxLength={200}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                mode === "online" &&
-                query.trim() &&
-                onlineStatus !== "loading"
-              ) {
-                event.preventDefault();
-                void search();
-              }
-            }}
-            value={query}
-            onChange={(e) => {
-              resetSearch();
-              setQuery(e.target.value);
-            }}
-          />
-        </div>
-      </div>
-      <section className="panel recipe-discovery">
-        <div>
-          <h3>Найти новые идеи</h3>
-          <p className="field-help">
-            Введи блюдо или ингредиент в поиск выше. Русскоязычные рецепты можно
-            найти в Яндексе и добавить в свою книгу со ссылкой на источник.
-          </p>
-        </div>
-        <a
-          className="btn"
-          href={webRecipeSearch(query, category)}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          className={foodView === "plan" ? "active" : ""}
+          aria-pressed={foodView === "plan"}
+          onClick={() => switchFoodView("plan")}
         >
-          Найти в Яндексе <ArrowUpRight size={16} />
-        </a>
-      </section>
-      {mode === "online" && (
-        <section className="panel recipe-online-search">
-          <div>
-            <h3>Рецепты из TheMealDB</h3>
-            <p className="field-help">
-              Международный каталог на английском. Попробуй «курица», «рис» или
-              название блюда на английском. Для незнакомого русского запроса
-              воспользуйся Яндексом. Кнопки «Завтрак / Обед / Ужин» выбирают
-              категорию сохранения, а не фильтруют каталог.
-            </p>
-            {query && onlineQuery(query) !== query.trim() && (
-              <p className="field-help">
-                Запрос в каталог: {onlineQuery(query)}
-              </p>
-            )}
-          </div>
-          <button
-            className="btn primary"
-            onClick={search}
-            disabled={!query.trim() || onlineStatus === "loading"}
-          >
-            {onlineStatus === "loading" ? "Ищем рецепты…" : "Найти в каталоге"}
-          </button>
-          {onlineError && <p role="alert">{onlineError}</p>}
-          {onlineStatus === "done" && (
-            <p role="status">
-              Найдено рецептов: {results.length}. Категорию сохранения можно
-              изменить в своей книге.
-            </p>
-          )}
-        </section>
-      )}
-      {list.length ? (
-        <div className="recipe-grid">
-          {list.map((r) => (
-            <article className="recipe-card" key={r.id}>
-              <button
-                className={`recipe-art food-${r.color}`}
-                onClick={() => setSelected(r)}
-                aria-label={`Открыть рецепт: ${r.title}`}
-              >
-                <span>{r.emoji}</span>
-                <div className="recipe-art-label">VSPACE / KITCHEN</div>
-              </button>
-              <button
-                className={`favorite-btn ${state.favorites.includes(r.id) ? "selected" : ""}`}
-                aria-label={`${state.favorites.includes(r.id) ? "Убрать из" : "Добавить в"} избранного: ${r.title}`}
-                aria-pressed={state.favorites.includes(r.id)}
-                onClick={() => toggleFavorite(r.id)}
-              >
-                <Heart
-                  size={18}
-                  fill={
-                    state.favorites.includes(r.id) ? "currentColor" : "none"
-                  }
-                />
-              </button>
-              <div className="recipe-body">
-                <span className="eyebrow">{r.category}</span>
-                <button className="recipe-title" onClick={() => setSelected(r)}>
-                  <h3>{r.title}</h3>
-                  <ArrowUpRight size={20} />
+          Меню недели и покупки
+        </button>
+      </div>
+      {foodView === "recipes" && (
+        <>
+          <section className="food-banner">
+            <div>
+              <span className="eyebrow">GOOD FOOD. GOOD MOOD.</span>
+              <h2>
+                Вдохновение
+                <br />
+                на каждый день<span>↗</span>
+              </h2>
+              <p>Своя книга рецептов и новые идеи из интернета.</p>
+            </div>
+            <div className="food-banner-art" aria-hidden="true">
+              <span>🥑</span>
+              <span>🍋</span>
+              <span>✳</span>
+            </div>
+          </section>
+          <div className="toolbar recipe-library-tools">
+            <div className="segmented" aria-label="Источник рецептов">
+              {[
+                ["library", "Все рецепты"],
+                ["saved", "Моя книга"],
+                ["online", "Международный каталог"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  className={mode === value ? "active" : ""}
+                  aria-pressed={mode === value}
+                  onClick={() => {
+                    resetSearch();
+                    setMode(value as typeof mode);
+                    if (value === "online") {
+                      setCategory(category === "Все" ? "Обед" : category);
+                      setFavorite(false);
+                    }
+                  }}
+                >
+                  {label}
                 </button>
-                <div className="recipe-meta">
-                  <span>
-                    <Clock size={14} />{" "}
-                    {r.time === null ? "Время не указано" : `${r.time} мин`}
-                  </span>
-                  <span>
-                    {r.calories === null
-                      ? "Калории не указаны"
-                      : `≈ ${r.calories} ккал / порция`}
-                  </span>
-                </div>
+              ))}
+            </div>
+            <button className="btn primary" onClick={() => setForm(null)}>
+              <Plus size={16} />
+              Добавить рецепт
+            </button>
+          </div>
+          <div className="toolbar">
+            <div className="segmented">
+              {(mode === "online"
+                ? ["Завтрак", "Обед", "Ужин"]
+                : ["Все", "Завтрак", "Обед", "Ужин"]
+              ).map((c) => (
+                <button
+                  className={category === c ? "active" : ""}
+                  key={c}
+                  onClick={() => {
+                    resetSearch();
+                    setCategory(c);
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <button
+              className={`btn ${favorite ? "selected" : ""}`}
+              aria-pressed={favorite}
+              onClick={() => setFavorite(!favorite)}
+            >
+              <Heart size={16} fill={favorite ? "currentColor" : "none"} />{" "}
+              Избранное
+            </button>
+            <div className="search-field">
+              <Search size={17} />
+              <input
+                aria-label="Найти рецепт или ингредиент"
+                placeholder="Рецепт или ингредиент"
+                maxLength={200}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    mode === "online" &&
+                    query.trim() &&
+                    onlineStatus !== "loading"
+                  ) {
+                    event.preventDefault();
+                    void search();
+                  }
+                }}
+                value={query}
+                onChange={(e) => {
+                  resetSearch();
+                  setQuery(e.target.value);
+                }}
+              />
+            </div>
+          </div>
+          <section className="panel recipe-discovery">
+            <div>
+              <h3>Найти новые идеи</h3>
+              <p className="field-help">
+                Введи блюдо или ингредиент в поиск выше. Русскоязычные рецепты
+                можно найти в Яндексе и добавить в свою книгу со ссылкой на
+                источник.
+              </p>
+            </div>
+            <a
+              className="btn"
+              href={webRecipeSearch(query, category)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Найти в Яндексе <ArrowUpRight size={16} />
+            </a>
+          </section>
+          {mode === "online" && (
+            <section className="panel recipe-online-search">
+              <div>
+                <h3>Рецепты из TheMealDB</h3>
+                <p className="field-help">
+                  Международный каталог на английском. Попробуй «курица», «рис»
+                  или название блюда на английском. Для незнакомого русского
+                  запроса воспользуйся Яндексом. Кнопки «Завтрак / Обед / Ужин»
+                  выбирают категорию сохранения, а не фильтруют каталог.
+                </p>
+                {query && onlineQuery(query) !== query.trim() && (
+                  <p className="field-help">
+                    Запрос в каталог: {onlineQuery(query)}
+                  </p>
+                )}
               </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty
-          title="Здесь пока пусто"
-          description={
-            mode === "online"
-              ? onlineStatus === "loading"
-                ? "Загружаем рецепты…"
-                : onlineStatus === "done"
-                  ? "Попробуйте другое название или ингредиент."
-                  : "Введите запрос и нажмите «Найти в каталоге»."
-              : mode === "saved"
-                ? "Сохраняйте рецепты из каталога или добавляйте найденные в интернете."
-                : "Измените поиск или фильтры."
-          }
-        />
+              <button
+                className="btn primary"
+                onClick={search}
+                disabled={!query.trim() || onlineStatus === "loading"}
+              >
+                {onlineStatus === "loading"
+                  ? "Ищем рецепты…"
+                  : "Найти в каталоге"}
+              </button>
+              {onlineError && <p role="alert">{onlineError}</p>}
+              {onlineStatus === "done" && (
+                <p role="status">
+                  Найдено рецептов: {results.length}. Категорию сохранения можно
+                  изменить в своей книге.
+                </p>
+              )}
+            </section>
+          )}
+          {list.length ? (
+            <div className="recipe-grid">
+              {list.map((r) => (
+                <article className="recipe-card" key={r.id}>
+                  <button
+                    className={`recipe-art food-${r.color}`}
+                    onClick={() => setSelected(r)}
+                    aria-label={`Открыть рецепт: ${r.title}`}
+                  >
+                    {r.cover ? (
+                      <img
+                        className="recipe-photo"
+                        src={r.cover}
+                        alt={r.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>{r.emoji}</span>
+                    )}
+                    <div className="recipe-art-label">VSPACE / KITCHEN</div>
+                  </button>
+                  <button
+                    className={`favorite-btn ${state.favorites.includes(r.id) ? "selected" : ""}`}
+                    aria-label={`${state.favorites.includes(r.id) ? "Убрать из" : "Добавить в"} избранного: ${r.title}`}
+                    aria-pressed={state.favorites.includes(r.id)}
+                    onClick={() => toggleFavorite(r.id)}
+                  >
+                    <Heart
+                      size={18}
+                      fill={
+                        state.favorites.includes(r.id) ? "currentColor" : "none"
+                      }
+                    />
+                  </button>
+                  <div className="recipe-body">
+                    <span className="eyebrow">{r.category}</span>
+                    <button
+                      className="recipe-title"
+                      onClick={() => setSelected(r)}
+                    >
+                      <h3>{r.title}</h3>
+                      <ArrowUpRight size={20} />
+                    </button>
+                    <div className="recipe-meta">
+                      <span>
+                        <Clock size={14} />{" "}
+                        {r.time === null ? "Время не указано" : `${r.time} мин`}
+                      </span>
+                      <span>
+                        {r.calories === null
+                          ? "Калории не указаны"
+                          : `≈ ${r.calories} ккал / порция`}
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              title="Здесь пока пусто"
+              description={
+                mode === "online"
+                  ? onlineStatus === "loading"
+                    ? "Загружаем рецепты…"
+                    : onlineStatus === "done"
+                      ? "Попробуйте другое название или ингредиент."
+                      : "Введите запрос и нажмите «Найти в каталоге»."
+                  : mode === "saved"
+                    ? "Сохраняйте рецепты из каталога или добавляйте найденные в интернете."
+                    : "Измените поиск или фильтры."
+              }
+            />
+          )}
+        </>
       )}
+      {foodView === "plan" && <WeeklyMeals />}
       <section className="meal-plan panel">
         <SectionHead
           index="01"
@@ -483,6 +553,9 @@ function RecipeModal({
   return (
     <Modal title={r.title} onClose={onClose}>
       <div className="recipe-detail">
+        {r.cover && (
+          <img className="recipe-modal-photo" src={r.cover} alt={r.title} />
+        )}
         <div className="button-row">
           <span className="tag">
             <Clock size={14} />{" "}

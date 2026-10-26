@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { FinancialExtras } from "../features/FinancialExtras";
+import { hashParam } from "../features/navigation";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import {
   Plus,
@@ -25,7 +27,7 @@ const categories = [
   "Подарки",
   "Другое",
 ];
-function TransactionForm({
+export function TransactionForm({
   transaction,
   date,
   onClose,
@@ -146,7 +148,20 @@ function TransactionForm({
 }
 export function Finance() {
   const { state, update, today, toast } = useApp();
-  const [month, setMonth] = useState(today.slice(0, 7));
+  const [month, setMonth] = useState(() => {
+    const month = hashParam("month");
+    return month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)
+      ? month
+      : today.slice(0, 7);
+  });
+  useEffect(() => {
+    const handler = () => {
+      const month = hashParam("month");
+      if (month && /^\d{4}-(0[1-9]|1[0-2])$/.test(month)) setMonth(month);
+    };
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [edit, setEdit] = useState<Transaction | null>();
@@ -328,7 +343,12 @@ export function Finance() {
         {records.length ? (
           <div className="finance-records">
             {records.map((t) => (
-              <div className="finance-row" key={t.id}>
+              <div
+                className="finance-row"
+                key={t.id}
+                id={"transaction-" + t.id}
+                tabIndex={-1}
+              >
                 <div className={`finance-icon ${t.type}`}>
                   {t.type === "income" ? (
                     <ArrowDownLeft size={18} />
@@ -381,6 +401,7 @@ export function Finance() {
           />
         )}
       </section>
+      <FinancialExtras />
       {edit !== undefined && (
         <TransactionForm
           transaction={edit || undefined}

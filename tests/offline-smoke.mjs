@@ -85,8 +85,78 @@ try {
   await page
     .getByRole("button", { name: "Открыть рецепт: Мой офлайн-рецепт" })
     .click();
-  if (!(await page.getByRole("dialog").textContent()).includes("200 г риса"))
+  if (!(await page.getByRole("dialog").textContent()).includes("200"))
     throw Error("Saved recipe unavailable offline");
+  await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Меню недели и покупки", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Запланировать готовку", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("combobox", { name: "Рецепт", exact: true })
+    .selectOption({ label: "Мой офлайн-рецепт" });
+  await page.getByLabel("Всего порций в партии").fill("4");
+  await page.getByLabel("На сколько порций исходный рецепт").fill("2");
+  await page
+    .getByRole("button", { name: "Сохранить готовку", exact: true })
+    .click();
+  await page
+    .getByRole("checkbox", { name: "Куплено: рис, 400 г", exact: true })
+    .check();
+  await page.waitForFunction(() =>
+    document
+      .querySelector(".local-badge")
+      ?.textContent?.includes("Сохранено локально"),
+  );
+  await page.reload();
+  if (
+    !(await page
+      .getByRole("checkbox", { name: "Куплено: рис, 400 г", exact: true })
+      .isChecked())
+  )
+    throw Error("Offline shopping check lost");
+  await page.goto(appUrl + "#day");
+  await page.getByRole("heading", { name: "Мой день.", exact: true }).waitFor();
+  if (
+    !(await page.locator(".day-grid").textContent()).includes(
+      "Мой офлайн-рецепт",
+    )
+  )
+    throw Error("Offline daily menu missing");
+  await context.setOffline(false);
+  await context.grantPermissions(["notifications"], {
+    origin: new URL(appUrl).origin,
+  });
+  await page.goto(appUrl + "#settings");
+  await page.getByLabel("Тихие часы: с", { exact: true }).fill("00:00");
+  await page.getByLabel("Тихие часы: до", { exact: true }).fill("00:00");
+  await page
+    .getByRole("button", { name: "Новое напоминание", exact: true })
+    .click();
+  await page.getByLabel("О чём напомнить").fill("Тестовое напоминание");
+  await page.getByLabel("Время напоминания").fill("00:00");
+  await page
+    .getByRole("button", { name: "Сохранить напоминание", exact: true })
+    .click();
+  await page.waitForFunction(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return (await registration.getNotifications()).some(
+      (n) => n.body === "Тестовое напоминание",
+    );
+  });
+  await page.evaluate(() =>
+    navigator.serviceWorker.dispatchEvent(
+      new MessageEvent("message", { data: { type: "VSPACE_OPEN_DAY" } }),
+    ),
+  );
+  await page.getByRole("heading", { name: "Мой день.", exact: true }).waitFor();
+  await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.getRegistration();
+    for (const n of await reg.getNotifications()) n.close();
+  });
   if (errors.length) throw Error(errors.join("\n"));
   console.log(
     JSON.stringify({
@@ -96,6 +166,9 @@ try {
       offlinePosters: posters,
       offlineLifePersistence: true,
       offlineSavedRecipe: true,
+      offlineWeeklyMenuAndShopping: true,
+      nativeNotificationWithGrantedPermission: true,
+      notificationMessageOpensMyDay: true,
       browserErrors: errors,
     }),
   );

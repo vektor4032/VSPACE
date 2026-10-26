@@ -1,3 +1,5 @@
+import { dateParam } from "../features/navigation";
+import { WeeklyReview } from "../features/WeeklyReview";
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { ChevronLeft, ChevronRight, Plus, Check } from "lucide-react";
@@ -20,7 +22,7 @@ const blank: LifeState["weekPlans"][string] = {
 };
 export function Week() {
   const { state, update, today, toast, go } = useApp();
-  const [start, setStart] = useState(mondayOf(today));
+  const [start, setStart] = useState(() => mondayOf(dateParam(today)));
   const [addDate, setAddDate] = useState("");
   const [priority, setPriority] = useState("");
   const days = Array.from({ length: 7 }, (_, i) => shiftDate(start, i));
@@ -267,6 +269,7 @@ export function Week() {
           </p>
         )}
       </section>
+      <WeeklyReview />
       <WeekReview
         key={start}
         plan={plan}

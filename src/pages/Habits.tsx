@@ -206,7 +206,11 @@ export function Habits() {
               (day) => (h.entries[day] || 0) >= h.target,
             ).length;
             return (
-              <article className="habit-card panel" key={h.id}>
+              <article
+                className="habit-card panel"
+                key={h.id}
+                id={"habit-" + h.id}
+              >
                 <div className="habit-card-top">
                   <div
                     className={`habit-icon ${value >= h.target ? "filled" : ""}`}

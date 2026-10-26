@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { dateParam } from "../features/navigation";
+import { useState, useEffect } from "react";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { localDate, shiftDate } from "../data";
 import { useApp, fmt } from "../context";
@@ -8,7 +9,12 @@ import { TaskForm, TaskRow } from "../components/Tasks";
 
 export function Planner() {
   const { state, update, today } = useApp();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(() => dateParam(today));
+  useEffect(() => {
+    const handler = () => setDate(dateParam(today));
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, [today]);
   const [view, setView] = useState<"day" | "week" | "month">("day");
   const [filter, setFilter] = useState("all");
   const [add, setAdd] = useState(false);

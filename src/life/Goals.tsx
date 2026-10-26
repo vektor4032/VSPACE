@@ -1,3 +1,4 @@
+import { ImageField } from "../features/ImageField";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Plus, Check, ArrowUpRight } from "lucide-react";
@@ -57,7 +58,12 @@ export function Goals() {
               g.habitIds.includes(h.id),
             );
             return (
-              <article className="panel goal-card" key={g.id}>
+              <article
+                className="panel goal-card"
+                key={g.id}
+                id={"goal-" + g.id}
+                tabIndex={-1}
+              >
                 <div className="life-row">
                   <span className="tag">
                     {g.duration} дней · {areaLabels[g.area]}
@@ -75,6 +81,14 @@ export function Goals() {
                     }
                   />
                 </div>
+                {g.cover && (
+                  <img
+                    className="goal-cover"
+                    src={g.cover}
+                    alt={g.title}
+                    loading="lazy"
+                  />
+                )}
                 <h3>{g.title}</h3>
                 <div className="goal-progress">
                   <div
@@ -109,13 +123,14 @@ export function Goals() {
                   <legend>Ежедневные отметки</legend>
                   <p className="field-help">
                     Отметь день, когда выполнила челлендж. Можно заполнить
-                    прошедшие дни; будущие откроются по дате.
+                    прошедшие дни; будущие откроются по дате. Круг учитывает
+                    только выбранные дни выполнения.
                   </p>
                   <div className="challenge-days">
                     {daily.days.map((date, index) => (
                       <label
                         key={date}
-                        className={`challenge-day ${date === today ? "is-today" : ""} ${date > today ? "is-future" : ""}`}
+                        className={`challenge-day ${date === today ? "is-today" : ""} ${date > today ? "is-future" : ""} ${!daily.plannedDays.includes(date) ? "is-rest" : ""}`}
                       >
                         <span className="challenge-day-number">
                           День {index + 1}
@@ -124,7 +139,9 @@ export function Goals() {
                           type="checkbox"
                           aria-label={`${g.title}: ${fmt(date, { day: "numeric", month: "long", year: "numeric" })}`}
                           checked={g.dailyEntries[date] === true}
-                          disabled={date > today}
+                          disabled={
+                            date > today || !daily.plannedDays.includes(date)
+                          }
                           onChange={() =>
                             update((s) => ({
                               ...s,
@@ -148,7 +165,11 @@ export function Goals() {
                         <span>
                           {fmt(date, { day: "numeric", month: "short" })}
                         </span>
-                        {date === today && <small>Сегодня</small>}
+                        {!daily.plannedDays.includes(date) ? (
+                          <small>Отдых</small>
+                        ) : (
+                          date === today && <small>Сегодня</small>
+                        )}
                       </label>
                     ))}
                   </div>
@@ -237,6 +258,10 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
   const [steps, setSteps] = useState(goal?.steps || []);
   const [draft, setDraft] = useState("");
   const [habits, setHabits] = useState(goal?.habitIds || []);
+  const [weekdays, setWeekdays] = useState(
+    goal?.weekdays || [0, 1, 2, 3, 4, 5, 6],
+  );
+  const [cover, setCover] = useState(goal?.cover || "");
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -253,17 +278,22 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
         : steps,
       habitIds: habits,
       dailyEntries: goal?.dailyEntries || {},
+      weekdays,
+      cover,
     };
     next.steps = next.steps.map((step) => ({
       ...step,
       title: step.title.trim(),
     }));
     if (
+      !weekdays.length ||
       !next.title ||
       next.steps.some((step) => !step.title) ||
       next.steps.length > 100
     ) {
-      toast("Укажи название цели и каждого шага (не более 100 шагов)");
+      toast(
+        "Укажите название, хотя бы один день выполнения и названия шагов (до 100)",
+      );
       return;
     }
     update((s) => ({
@@ -311,6 +341,40 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
             />
           </label>
         </div>
+        <fieldset className="life-fieldset">
+          <legend>Дни выполнения</legend>
+          <div className="weekday-options">
+            {[
+              [1, "Пн"],
+              [2, "Вт"],
+              [3, "Ср"],
+              [4, "Чт"],
+              [5, "Пт"],
+              [6, "Сб"],
+              [0, "Вс"],
+            ].map(([day, label]) => (
+              <label key={day}>
+                <input
+                  type="checkbox"
+                  checked={weekdays.includes(Number(day))}
+                  onChange={() =>
+                    setWeekdays(
+                      weekdays.includes(Number(day))
+                        ? weekdays.filter((d) => d !== Number(day))
+                        : [...weekdays, Number(day)],
+                    )
+                  }
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <small className="field-help">
+            Для зала 3 раза в неделю выберите три дня. Дни отдыха не снижают
+            прогресс.
+          </small>
+        </fieldset>
+        <ImageField value={cover} onChange={setCover} label="Обложка цели" />
         <label>
           Сфера
           <select name="area" defaultValue={goal?.area || "growth"}>

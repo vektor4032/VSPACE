@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import {
   LayoutDashboard,
+  SunMedium,
   HeartHandshake,
   Orbit,
   CalendarDays,
@@ -20,6 +21,7 @@ import type { useWorkspace } from "./cloud/useWorkspace";
 import type { AppState } from "./data";
 
 export type Page =
+  | "day"
   | "home"
   | "life"
   | "habits"
@@ -40,6 +42,7 @@ export const Context = createContext<{
 export const useApp = () => useContext(Context);
 export const nav = [
   { id: "home", label: "Главная", en: "Overview", icon: LayoutDashboard },
+  { id: "day", label: "Мой день", en: "My day", icon: SunMedium },
   { id: "life", label: "Моя жизнь", en: "Life", icon: HeartHandshake },
   { id: "habits", label: "Привычки", en: "Habits", icon: Orbit },
   { id: "planner", label: "Планер", en: "Planner", icon: CalendarDays },

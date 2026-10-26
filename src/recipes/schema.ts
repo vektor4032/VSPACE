@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { coverSchema } from "../features/media";
 const webUrl = z
   .string()
   .max(2000)
@@ -7,6 +8,7 @@ const webUrl = z
     "Нужна ссылка HTTP или HTTPS",
   );
 export const recipeSchema = z.object({
+  cover: coverSchema.default(""),
   id: z.string().min(1).max(300),
   title: z.string().trim().min(1).max(300),
   category: z.enum(["Завтрак", "Обед", "Ужин"]),

@@ -108,6 +108,8 @@ export function TaskRow({
   return (
     <>
       <div
+        id={"task-" + task.id}
+        tabIndex={-1}
         className={`task-row ${task.done ? "done" : ""}`}
         draggable={!compact}
         onDragStart={(e) => e.dataTransfer.setData("text/plain", task.id)}

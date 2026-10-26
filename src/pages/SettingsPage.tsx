@@ -1,3 +1,4 @@
+import { Personalization } from "../features/Personalization";
 import { useEffect, useRef, useState } from "react";
 import { AccountPanel } from "../cloud/AccountPanel";
 import { useAuth } from "../cloud/Auth";
@@ -59,6 +60,7 @@ export function SettingsPage() {
         description="Пусть это пространство будет действительно твоим."
       />
       <AccountPanel />
+      <Personalization />
       <div className="settings-layout">
         <section className="panel">
           <SectionHead index="01" title="Личный профиль" />
@@ -128,6 +130,7 @@ export function SettingsPage() {
               >
                 <option value="dark">Obsidian Black</option>
                 <option value="forest">Deep Forest</option>
+                <option value="graphite">Soft Graphite</option>
               </select>
             </label>
             <label>
@@ -137,6 +140,9 @@ export function SettingsPage() {
                   ["lime", "#b7ff36", "Acid Lime"],
                   ["mint", "#39e6a2", "Digital Mint"],
                   ["violet", "#ac96ff", "Electric Violet"],
+                  ["sage", "#bbcfb0", "Sage"],
+                  ["lavender", "#c9b9e6", "Lavender"],
+                  ["graphite", "#b8c2c8", "Silver Graphite"],
                 ].map(([v, c, l]) => (
                   <button
                     key={v}
