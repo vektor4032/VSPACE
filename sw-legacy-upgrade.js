@@ -29,3 +29,32 @@ self.addEventListener("install", (event) => {
     })(),
   );
 });
+
+// Notifications created while VSPACE is open return to the daily dashboard.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      let target = new URL("#day", self.registration.scope).href;
+      try {
+        const requested = new URL(event.notification.data?.url || target);
+        if (
+          requested.origin === self.location.origin &&
+          requested.href.startsWith(self.registration.scope)
+        )
+          target = requested.href;
+      } catch {}
+      const windows = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const existing = windows.find((client) =>
+        client.url.startsWith(self.registration.scope),
+      );
+      if (existing) {
+        existing.postMessage({ type: "VSPACE_OPEN_DAY" });
+        await existing.focus();
+      } else await self.clients.openWindow(target);
+    })(),
+  );
+});
